@@ -15,7 +15,9 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 searching...
 
 ### 🧰 How to Install
-👉 pip install geopandas
+👉 bash:
+
+      pip install geopandas
 
 ### 🚀 Small Example
 👉 python:
@@ -40,7 +42,9 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 searching...
 
 ### 🧰 How to Install
-👉 pip install osmnx
+👉 bash:
+
+      pip install osmnx
 
 ### 🚀 Small Example
 👉 python:
@@ -65,7 +69,9 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 searching...
 
 ### 🧰 How to Install
-👉 pip install rasterio
+👉 bash:
+
+      pip install rasterio
 
 ### 🚀 Small Example
 👉 python:
@@ -92,7 +98,9 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 searching...
 
 ### 🧰 How to Install
-👉 pip install duckdb
+👉 bash:
+
+      pip install duckdb
 
 ### 🚀 Small Example
 👉 python:   
