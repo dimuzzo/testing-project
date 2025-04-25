@@ -20,11 +20,11 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 ### 🚀 Small Example
 👉 python:
 
-   import geopandas as gpd
+      import geopandas as gpd
    
-   world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+      world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
    
-   world.plot()
+      world.plot()
 
 ---
 
@@ -45,11 +45,11 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 ### 🚀 Small Example
 👉 python:
 
-   import osmnx as ox
+      import osmnx as ox
    
-   graph = ox.graph_from_place("Bologna, Italy", network_type="walk")
+      graph = ox.graph_from_place("Bologna, Italy", network_type="walk")
    
-   ox.plot_graph(ox.project_graph(graph))
+      ox.plot_graph(ox.project_graph(graph))
 
 ---
 
@@ -70,13 +70,13 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 ### 🚀 Small Example
 👉 python:
 
-   import rasterio
+      import rasterio
    
-   url = "https://github.com/mapbox/rasterio/raw/main/tests/data/RGB.byte.tif"
+      url = "https://github.com/mapbox/rasterio/raw/main/tests/data/RGB.byte.tif"
    
-   with rasterio.open(url) as src:
+      with rasterio.open(url) as src:
    
-       print(src.count, src.crs, src.bounds)
+          print(src.count, src.crs, src.bounds)
 
 ---
 
@@ -95,13 +95,15 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 pip install duckdb
 
 ### 🚀 Small Example
-👉 import duckdb
+👉 python:   
+      
+      import duckdb
 
-   duckdb.install_extension("spatial")
+      duckdb.install_extension("spatial")
    
-   duckdb.load_extension("spatial")
+      duckdb.load_extension("spatial")
    
-   duckdb.query("SELECT ST_Buffer(ST_Point(1, 1), 10)").fetchall()
+      duckdb.query("SELECT ST_Buffer(ST_Point(1, 1), 10)").fetchall()
 
 ---
 
@@ -124,9 +126,9 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 ### 🚀 Small Example
 👉 Connect to pgAdmin or psql:
 
-   CREATE EXTENSION postgis;
+      CREATE EXTENSION postgis;
    
-   SELECT PostGIS_Version();
+      SELECT PostGIS_Version();
 
 ---
 
