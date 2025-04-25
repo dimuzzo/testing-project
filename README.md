@@ -39,7 +39,9 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 https://osmnx.readthedocs.io/
 
 ### 🎥 Tutorial on YouTube
-👉 searching...
+👉 List of Videos: https://www.youtube.com/watch?v=CgW0HPHqFE8&list=PLbabOmM8ZAJBXOARP4EXd3vrJ7R6pUnSx
+
+👉 ...
 
 ### 🧰 How to Install
 👉 bash:
