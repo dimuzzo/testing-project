@@ -12,7 +12,9 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 https://geopandas.org/
 
 ### 🎥 Tutorial on YouTube
-👉 searching...
+👉 List of Videos: https://www.youtube.com/watch?v=slqZVgB8tIg&list=PLLxyyob7YmEEbXc1R6Tc5YvVIAYPuvoMY
+
+👉 Beginner's Guide: https://youtu.be/t7lliJXFt8w?si=cgZfXHD51c-dLSgV
 
 ### 🧰 How to Install
 👉 bash:
@@ -34,6 +36,8 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 
 ### 🔗 GitHub Repo
 👉 https://github.com/gboeing/osmnx
+
+👉 https://github.com/gboeing/osmnx-examples
 
 ### 🌐 Official Site
 👉 https://osmnx.readthedocs.io/
@@ -68,7 +72,9 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 https://rasterio.readthedocs.io/
 
 ### 🎥 Tutorial on YouTube
-👉 searching...
+👉 Beginner's Guide: https://youtu.be/LVt8CezezZQ?si=QmbTTG2S9PZNttDv
+
+👉 GeoTIFF + Rasterio Tutorial: https://youtu.be/ieyODuIjXp4?si=7In_IOQWZodHGlmI
 
 ### 🧰 How to Install
 👉 bash:
@@ -83,7 +89,7 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
       url = "https://github.com/mapbox/rasterio/raw/main/tests/data/RGB.byte.tif"
    
       with rasterio.open(url) as src:
-   
+      
           print(src.count, src.crs, src.bounds)
 
 ---
@@ -97,7 +103,7 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 https://duckdb.org/docs/stable/extensions/spatial/overview.html
 
 ### 🎥 Tutorial on YouTube
-👉 searching...
+👉 List of Videos: https://www.youtube.com/watch?v=ZX5FdqzGT1E&list=PLIYcNkSjh-0ztvwoAp3GeW8HNSUSk_q3K
 
 ### 🧰 How to Install
 👉 bash:
@@ -126,7 +132,7 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 👉 https://postgis.net/
 
 ### 🎥 Tutorial on YouTube
-👉 searching...
+👉 List of Videos: https://www.youtube.com/watch?v=LhKj-_-CCfY&list=PLAxJ4-o7ZoPcvp0ETujkLVCmKIGj-YvlG
 
 ### 🧰 How to Install
 👉 Docker Desktop: https://www.docker.com/products/docker-desktop/
@@ -155,6 +161,10 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 ### 🗺 OpenStreetMap Data (via OSMnx or GeoFabrik):
 
 👉 https://download.geofabrik.de/
+
+### 🎥 Additional Videos to Check:
+
+👉 1. https://www.youtube.com/watch?v=0mWgVVH_dos
 
 
 
