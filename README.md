@@ -166,6 +166,8 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 
 👉 1. https://www.youtube.com/watch?v=0mWgVVH_dos
 
+👉 2. https://youtu.be/jJD_xkU5d1o?si=7H7cE6gEb8uCZ8ZU
+
 
 
 
