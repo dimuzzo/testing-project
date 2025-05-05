@@ -177,3 +177,4 @@ GeoPandas/data
 OSMnx/data
 OSMnx/cache
 Rasterio/data
+DuckDB/data
