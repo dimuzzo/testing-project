@@ -168,6 +168,15 @@ Testing libraries and databases like GeoPandas, OSMnx, Rasterio, DuckDB and Post
 
 👉 2. https://youtu.be/jJD_xkU5d1o?si=7H7cE6gEb8uCZ8ZU
 
+---
+
+# ATTENTION:
+
+Do not try to collaborate or merge or touch the elements in this GitHub Repo.
+
+Everything you will copy from this GitHub Repo is under my policy.
+
+---
 
 
 
