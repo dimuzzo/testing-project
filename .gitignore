@@ -173,8 +173,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+cache
 GeoPandas/data
 OSMnx/data
 OSMnx/cache
 Rasterio/data
 DuckDB/data
+DuckDB/cache
