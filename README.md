@@ -1,5 +1,5 @@
 # Testing Project by Alessandro
-Testing libraries and databases like GeoPandas, OSMnx, Rasterio and DuckDB. A lot of documentation is going to be uploaded...
+Testing libraries and databases like GeoPandas, OSMnx, Rasterio and DuckDB.
 
 ---
 
@@ -17,18 +17,13 @@ List of Videos: https://www.youtube.com/watch?v=slqZVgB8tIg&list=PLLxyyob7YmEEbX
 Beginner's Guide: https://youtu.be/t7lliJXFt8w?si=cgZfXHD51c-dLSgV
 
 ### How to Install
-bash:
+via bash:
 
-      pip install geopandas
+        pip install geopandas
 
-### Small Example
-python:
+via python:
 
-      import geopandas as gpd
-   
-      world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-   
-      world.plot()
+        import geopandas as gdp
 
 ---
 
@@ -46,18 +41,13 @@ https://osmnx.readthedocs.io/
 List of Videos: https://www.youtube.com/watch?v=CgW0HPHqFE8&list=PLbabOmM8ZAJBXOARP4EXd3vrJ7R6pUnSx
 
 ### How to Install
-bash:
+via bash:
 
-      pip install osmnx
+        pip install osmnx
 
-### Small Example
-python:
+via python:
 
-      import osmnx as ox
-   
-      graph = ox.graph_from_place("Bologna, Italy", network_type="walk")
-   
-      ox.plot_graph(ox.project_graph(graph))
+        import osmnx as ox
 
 ---
 
@@ -75,20 +65,13 @@ Beginner's Guide: https://youtu.be/LVt8CezezZQ?si=QmbTTG2S9PZNttDv
 GeoTIFF + Rasterio Tutorial: https://youtu.be/ieyODuIjXp4?si=7In_IOQWZodHGlmI
 
 ### How to Install
-bash:
+via bash:
 
-      pip install rasterio
+        pip install rasterio
 
-### Small Example
-python:
+via python:
 
-      import rasterio
-   
-      url = "https://github.com/mapbox/rasterio/raw/main/tests/data/RGB.byte.tif"
-   
-      with rasterio.open(url) as src:
-      
-          print(src.count, src.crs, src.bounds)
+        import rasterio
 
 ---
 
@@ -104,24 +87,17 @@ https://duckdb.org/docs/stable/extensions/spatial/overview.html
 List of Videos: https://www.youtube.com/watch?v=ZX5FdqzGT1E&list=PLIYcNkSjh-0ztvwoAp3GeW8HNSUSk_q3K
 
 ### How to Install
-bash:
+via bash:
 
-      pip install duckdb
+        pip install duckdb
 
-### Small Example
-python:   
+via python:   
       
-      import duckdb
-
-      duckdb.install_extension("spatial")
-   
-      duckdb.load_extension("spatial")
-   
-      duckdb.query("SELECT ST_Buffer(ST_Point(1, 1), 10)").fetchall()
+        import duckdb
 
 ---
 
-## 🎁 Additional links: Geographic data to implement
+## 🔗 Additional links 
 
 ### CORINE Land Cover (Copernicus):
 
