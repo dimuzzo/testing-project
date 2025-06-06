@@ -1,5 +1,5 @@
 # Testing Project by Alessandro
-Testing libraries and databases like GeoPandas, OSMnx, Rasterio and DuckDB.
+Testing libraries and databases like GeoPandas, OSMnx, Rasterio and DuckDB (+ QuackOSM)
 
 ---
 
@@ -75,7 +75,7 @@ via python:
 
 ---
 
-## 🐥 4. DuckDB with spatial extension — Embedded SQL database with GIS support
+## 🐥 4. DuckDB with spatial extension - Embedded SQL database with GIS support
 
 ### GitHub Repo
 https://github.com/duckdb/duckdb
@@ -94,6 +94,28 @@ via bash:
 via python:   
       
         import duckdb
+
+---
+
+## 🦆 5. QuackOSM - An open-source tool for reading OpenStreetMap PBF files using DuckDB
+
+### GitHub Repo
+https://github.com/kraina-ai/quackosm
+
+### Official Site
+https://kraina-ai.github.io/quackosm/0.2.0/
+
+### Tutorial on YouTube
+List of Videos: 
+
+### How to Install
+via bash:
+
+        pip install quackosm
+
+via python:   
+      
+        import quackosm as qosm
 
 ---
 
