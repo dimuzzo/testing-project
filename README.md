@@ -75,7 +75,7 @@ via python:
 
 ---
 
-## 🐥 4. DuckDB with spatial extension — Embedded SQL database with GIS support
+## 🐥 4. DuckDB with spatial extension - Embedded SQL database with GIS support
 
 ### GitHub Repo
 https://github.com/duckdb/duckdb
@@ -97,7 +97,7 @@ via python:
 
 ---
 
-## 🦆 5. QuackOSM — An open-source tool for reading OpenStreetMap PBF files using DuckDB
+## 🦆 5. QuackOSM - An open-source tool for reading OpenStreetMap PBF files using DuckDB
 
 ### GitHub Repo
 https://github.com/kraina-ai/quackosm
