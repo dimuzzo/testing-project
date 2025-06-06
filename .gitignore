@@ -180,3 +180,6 @@ OSMnx/cache
 Rasterio/data
 DuckDB/data
 DuckDB/cache
+QuackOSM/data
+QuackOSM/cache
+QuackOSM/files
