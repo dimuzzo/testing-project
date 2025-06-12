@@ -183,3 +183,4 @@ DuckDB/cache
 QuackOSM/data
 QuackOSM/cache
 QuackOSM/files
+QuackOSM/*.pbf
