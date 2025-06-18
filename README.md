@@ -106,7 +106,7 @@ https://github.com/kraina-ai/quackosm
 https://kraina-ai.github.io/quackosm/0.2.0/
 
 ### Tutorial on YouTube
-List of Videos: 
+Livestreaming from the developer (Kamil Raczycki): https://www.youtube.com/live/r6cWiSULgYs?si=8zYZciaU-MOGZpeY&t=1928
 
 ### How to Install
 via bash:
