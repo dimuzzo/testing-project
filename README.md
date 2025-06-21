@@ -1,4 +1,9 @@
 # Testing Project by Alessandro
+
+![GitHub last commit](https://img.shields.io/github/last-commit/dimuzzo/testing-project?style=flat-square&logo=github&label=Last%20Commit)
+![GitHub repo size](https://img.shields.io/github/repo-size/dimuzzo/testing-project?style=flat-square&logo=github&label=Repo%20Size)
+![GitHub stars](https://img.shields.io/github/stars/dimuzzo/testing-project?style=flat-square&logo=github&label=Stars)
+
 Testing libraries and databases like GeoPandas, OSMnx, Rasterio and DuckDB (+ QuackOSM)
 
 ---
@@ -139,3 +144,5 @@ https://download.geofabrik.de/
 2. https://youtu.be/jJD_xkU5d1o?si=7H7cE6gEb8uCZ8ZU
 
 ---
+
+> Created by [dimuzzo](https://github.com/dimuzzo)
