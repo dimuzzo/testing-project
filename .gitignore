@@ -174,13 +174,12 @@ cython_debug/
 .pypirc
 
 cache
+files
 GeoPandas/data
 OSMnx/data
-OSMnx/cache
 Rasterio/data
 DuckDB/data
-DuckDB/cache
 QuackOSM/data
-QuackOSM/cache
 QuackOSM/files
 QuackOSM/*.pbf
+UseCasesManagement/data
