@@ -1,2 +1,0 @@
-use_case,technology,operation_description,test_dataset,execution_time_s,notes
-1. Ingestion & Filtering,QuackOSM,"Extract and save buildings for Milan, Italy",italy-latest.osm.pbf,349.00686979999955,Found 62133 buildings. Forced row_group_size=10000.

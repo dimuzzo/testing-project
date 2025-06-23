@@ -17,6 +17,7 @@ CSV_HEADER = [
     'operation_description',
     'test_dataset',
     'execution_time_s',
+    'output_size_mb',
     'notes'
 ]
 
