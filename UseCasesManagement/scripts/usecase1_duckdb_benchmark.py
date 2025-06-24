@@ -5,7 +5,6 @@ import osmnx as ox
 from pathlib import Path
 from utils import Timer, save_results
 
-
 # Main Function
 def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     """
@@ -60,7 +59,6 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     }
     # Call the helper function from utils.py to write to the CSV
     save_results(result_data)
-
 
 # Script Entry Point
 if __name__ == '__main__':
