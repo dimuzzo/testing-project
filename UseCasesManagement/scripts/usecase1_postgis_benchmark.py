@@ -43,6 +43,9 @@ def run_postgis_extraction(place_name, pbf_filename):
         print(f"PostGIS query for {place_name} completed in {t.interval:.4f} seconds.")
         print(f"Found {record_count} buildings.")
 
+        # For this test, 'output_size_mb' is not directly applicable
+        # as we are using an external DataBase on Postgresql.
+        # A more advanced test could measure peak memory usage.
         result_data = {
             'use_case': '1. Ingestion & Filtering',
             'technology': 'PostGIS',
