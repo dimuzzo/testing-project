@@ -1,3 +1,4 @@
 use_case,technology,operation_description,test_dataset,execution_time_s,output_size_mb,notes
 1. Ingestion & Filtering,QuackOSM,"Extract and save buildings for Milan, Italy",italy-latest.osm.pbf,350.3263044999985,6.97,Found 62133 buildings. Forced row_group_size=10000.
 1. Ingestion & Filtering,PostGIS,"Extract buildings query for Milan, Italy",italy-latest.osm.pbf,0.35305259999950067,N/A,Query Time only. Found 62127 buildings.
+1. Ingestion & Filtering,PyOsmium + GeoPandas,"Read PBF and filter for Milan, Italy",lombardy-latest.osm.pbf,241.88006829999995,N/A,"Read 1781547 buildings from PBF, then filtered to 60273 for the target area."
