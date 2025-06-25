@@ -4,7 +4,7 @@ import urllib.request
 from pathlib import Path
 
 def run_simple_conversion_test():
-    # --- Setup paths ---
+    # Setup paths
     current_script_path = Path(__file__).resolve()
     project_root = current_script_path.parent.parent.parent
     raw_data_dir = project_root / 'data' / 'raw'
@@ -22,9 +22,7 @@ def run_simple_conversion_test():
     else:
         print(f"Test file already exists at {pbf_path}.")
 
-    print("\n" + "-" * 30)
-    print(f"Attempting the simplest possible conversion for: {pbf_path}")
-    print("-" * 30)
+    print(f"Attempting the conversion for: {pbf_path}")
 
     try:
         # The function takes the INPUT path and returns the OUTPUT path.
@@ -34,11 +32,11 @@ def run_simple_conversion_test():
             tags_filter={}
         )
 
-        print(f"\nSUCCESS! The simplest conversion worked without crashing.")
+        print(f"\nThe conversion worked without crashing.")
         print(f"The output file has been created at: {created_parquet_path}")
 
     except Exception as e:
-        print(f"\nERROR! The conversion failed with a clear Python exception: {e}")
+        print(f"\nERROR! The conversion failed with a clear exception: {e}")
         import traceback
         traceback.print_exc()
 

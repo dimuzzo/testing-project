@@ -45,7 +45,6 @@ def run_postgis_extraction(place_name, pbf_filename):
 
         # For this test, 'output_size_mb' is not directly applicable
         # as we are using an external DataBase on Postgresql.
-        # A more advanced test could measure peak memory usage.
         result_data = {
             'use_case': '1. Ingestion & Filtering',
             'technology': 'PostGIS',

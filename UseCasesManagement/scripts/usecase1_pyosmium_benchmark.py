@@ -41,7 +41,7 @@ def run_pyosmium_ingestion(pbf_filename, filter_place_name):
     """
     Runs the data ingestion benchmark using PyOsmium and GeoPandas.
     """
-    print(f"Testing: PyOsmium + GeoPandas, filtering for {filter_place_name}")
+    print(f"Testing: PyOsmium + GeoPandas, filtering for {filter_place_name}.")
 
     current_script_path = Path(__file__).resolve()
     working_root = current_script_path.parent.parent
@@ -54,17 +54,17 @@ def run_pyosmium_ingestion(pbf_filename, filter_place_name):
         handler = BuildingHandler()
 
         # Apply the handler to the PBF file.
-        # `locations=True` is crucial: it tells Osmium to build an index
+        # `locations=True` tells Osmium to build an index
         # of node locations in memory so we can create geometries.
         # This is the most memory-intensive part.
-        print(f"Reading PBF file {pbf_path.name} with PyOsmium...")
+        print(f"Reading PBF file {pbf_path.name} with PyOsmium.")
         handler.apply_file(str(pbf_path), locations=True)
         total_buildings_in_pbf = len(handler.buildings)
-        print(f"Found {total_buildings_in_pbf} total buildings. Creating initial GeoDataFrame...")
+        print(f"Found {total_buildings_in_pbf} total buildings. Creating initial GeoDataFrame.")
         gdf_full = gpd.GeoDataFrame(handler.buildings, crs="EPSG:4326")
 
         # Filter the in-memory GeoDataFrame by the place boundary
-        print(f"Filtering in-memory GeoDataFrame for {filter_place_name}...")
+        print(f"Filtering in-memory GeoDataFrame for {filter_place_name}.")
         boundary_gdf = ox.geocode_to_gdf(filter_place_name)
         # Use gpd.clip to keep only buildings within the boundary
         gdf_filtered = gpd.clip(gdf_full, boundary_gdf)

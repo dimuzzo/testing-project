@@ -1,11 +1,9 @@
-# Imports
 import os
 import quackosm
 import osmnx as ox
 from pathlib import Path
 from utils import Timer, save_results
 
-# Main Function
 def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     """
     Runs the data ingestion and filtering benchmark for a given PBF file and place.
@@ -18,7 +16,7 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     output_dir = working_root / 'data' / 'processed'
     output_file = output_dir / output_filename
 
-    print(f"Starting ingestion for '{place_name}' from: {pbf_path}")
+    print(f"Starting ingestion for '{place_name}' from: {pbf_path}.")
 
     # Run and time the main ingestion logic
     with Timer() as t:
@@ -42,7 +40,7 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     print(f"Ingestion for '{place_name}' completed in {t.interval:.4f} seconds.")
 
     # Calculate output file size
-    # Get file size in bytes and convert to megabytes (MB)
+    # Get file size in bytes and convert to MegaBytes (MB)
     output_size_bytes = output_file.stat().st_size
     output_size_mb = output_size_bytes / (1024 * 1024)
     print(f"Output file size: {output_size_mb:.2f} MB")
@@ -60,7 +58,6 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     # Call the helper function from utils.py to write to the CSV
     save_results(result_data)
 
-# Script Entry Point
 if __name__ == '__main__':
     # Define parameters for this specific run
     PBF_FILE = 'italy-latest.osm.pbf'
@@ -69,10 +66,10 @@ if __name__ == '__main__':
 
     print(f"Running Benchmark: Use Case 1 (PBF: {PBF_FILE})")
 
-    # Use a try...except block to gracefully handle potential crashes
+    # Use a try/except block to handle potential crashes
     try:
         run_quackosm_ingestion(PBF_FILE, PLACE, OUTPUT_FILENAME)
-        print("Benchmark for Use Case 1 finished successfully")
+        print("Benchmark for Use Case 1 finished successfully.")
     except Exception as e:
         print(f"\nERROR: The script failed with an exception.")
         print(f"Error details: {e}")

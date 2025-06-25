@@ -21,7 +21,6 @@ CSV_HEADER = [
     'notes'
 ]
 
-
 def save_results(result_data):
     """
     Saves a result row to the main CSV file.
@@ -42,10 +41,9 @@ def save_results(result_data):
 
             writer.writerow(result_data)
 
-        print(f"Result saved for {result_data['technology']}: {result_data['execution_time_s']:.4f}s")
+        print(f"Result saved for {result_data['technology']}: {result_data['execution_time_s']:.4f}s.")
     except Exception as e:
-        print(f"ERROR: Could not save results to {RESULTS_FILE}. Details: {e}")
-
+        print(f"ERROR: Could not save results to {RESULTS_FILE}. Details: {e}.")
 
 class Timer:
     """A simple context manager timer."""
