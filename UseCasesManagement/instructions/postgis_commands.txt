@@ -1,7 +1,14 @@
-Command to use osm2pgsql for importing .pbf data into PostGIS DBs via your CMD/Powershell:
+Commands to use osm2pgsql for importing .pbf data into PostGIS DBs via your CMD/Powershell:
 
-Measure-Command {
+1. Install the .zip file to use osm2pgsql from the website 'https://osm2pgsql.org/doc/install/windows.html' (if you are on Windows) and extract it.
+
+2. Modify your environment PATH with the directory path which contains the osm2pgsql.exe file.
+
+3. Open your CMD/Powershell at that specific path.
+
+4. Use this specific command:
+'Measure-Command {
     .\osm2pgsql.exe --create -d osm_benchmark_db -U postgres -W --slim -C 2048 --flat-nodes C:\osm_temp\nodes.bin "...\testing-project\UseCasesManagement\data\raw\italy-latest.osm.pbf"
-    }
+    }'
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
