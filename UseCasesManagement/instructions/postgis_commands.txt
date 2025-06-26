@@ -1,3 +1,12 @@
+How to enable the PostGIS extension in your Database:
+
+1. Open pgAdmin 4.
+2. Connect with the server that has the Database 'osm_benchmark_db'.
+3. Right click on the Database and select Query Tool.
+4. Use the command 'CREATE EXTENSION postgis;'.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 Commands to use osm2pgsql for importing .pbf data into PostGIS DBs via your CMD/Powershell:
 
 1. Install the .zip file to use osm2pgsql from the website 'https://osm2pgsql.org/doc/install/windows.html' (if you are on Windows) and extract it.
@@ -10,5 +19,14 @@ Commands to use osm2pgsql for importing .pbf data into PostGIS DBs via your CMD/
 'Measure-Command {
     .\osm2pgsql.exe --create -d osm_benchmark_db -U postgres -W --slim -C 2048 --flat-nodes C:\osm_temp\nodes.bin "...\testing-project\UseCasesManagement\data\raw\italy-latest.osm.pbf"
     }'
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+How to retrieve the Database size via Postgresql:
+
+1. Open pgAdmin 4.
+2. Connect with the server that has the Database 'osm_benchmark_db'.
+3. Right click on the Database and select Query Tool.
+4. Use the command 'SELECT pg_size_pretty( pg_database_size('osm_benchmark_db') );'.
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
