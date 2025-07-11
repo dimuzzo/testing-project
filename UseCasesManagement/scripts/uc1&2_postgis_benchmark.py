@@ -11,7 +11,7 @@ DB_HOST = "localhost"
 DB_PORT = "5432"
 
 def run_postgis_extraction(place_name, pbf_filename):
-    print(f"Testing: PostGIS extraction for {place_name}")
+    print(f"Testing PostGIS extraction for {place_name}")
     conn = None
     try:
         conn = psycopg2.connect(

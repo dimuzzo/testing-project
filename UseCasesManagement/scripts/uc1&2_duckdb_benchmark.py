@@ -16,7 +16,7 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     output_dir = working_root / 'data' / 'processed'
     output_file = output_dir / output_filename
 
-    print(f"Starting ingestion for '{place_name}' from: {pbf_path}.")
+    print(f"Testing DuckDB + QuackOSM ingestion & filtering for '{place_name}' from: {pbf_path}.")
 
     # Run and time the main ingestion logic
     with Timer() as t:
@@ -37,7 +37,7 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
         os.makedirs(output_dir, exist_ok=True)
         buildings_gdf.to_parquet(output_file)
 
-    print(f"Ingestion for '{place_name}' completed in {t.interval:.4f} seconds.")
+    print(f"Ingestion & Filtering for '{place_name}' completed in {t.interval:.4f} seconds.")
 
     # Calculate output file size
     # Get file size in bytes and convert to MegaBytes (MB)
