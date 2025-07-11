@@ -54,7 +54,7 @@ def run_duckdb_analysis(input_file_path, show_preview=False):
 
         # Prepare and save the benchmark result
         result_data = {
-            'use_case': '2. Analysis (Single Table)',
+            'use_case': '3. Analysis (Single Table)',
             'technology': 'DuckDB Spatial',
             'operation_description': f'Calculate {op_name.replace("_", " ")}',
             'test_dataset': input_file_path.name,
@@ -72,13 +72,13 @@ if __name__ == '__main__':
     working_root = current_script_path.parent.parent
     input_file = working_root / 'data' / 'processed' / 'milan_buildings_from_italy_pbf.geoparquet'
 
-    print(f"Running Benchmark: Use Case 2.")
+    print(f"Running Benchmark: Use Case 3.")
     print(f"Using input file: {input_file}.")
 
     if not input_file.exists():
         print(f"\nERROR: Input file not found at {input_file}")
-        print("Please run a Use Case 1 script/notebook first to generate the processed file.")
+        print("Please run a Use Cases 1 & 2 script/notebook first to generate the processed file.")
     else:
         # Run the DuckDB benchmarks
         run_duckdb_analysis(input_file, show_preview=True)
-        print("\nAll DuckDB tests for Use Case 2 are complete.")
+        print("\nAll DuckDB tests for Use Case 3 are complete.")

@@ -46,7 +46,7 @@ def run_postgis_extraction(place_name, pbf_filename):
         # For this test, 'output_size_mb' is not directly applicable
         # as we are using an external DataBase on Postgresql.
         result_data = {
-            'use_case': '1. Ingestion & Filtering',
+            'use_case': '1. Ingestion & 2. Filtering',
             'technology': 'PostGIS',
             'operation_description': f'Extract buildings query for {place_name}',
             'test_dataset': pbf_filename,
@@ -57,7 +57,7 @@ def run_postgis_extraction(place_name, pbf_filename):
         save_results(result_data)
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred: {e}.")
     finally:
         if conn is not None:
             conn.close()

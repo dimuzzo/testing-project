@@ -76,7 +76,7 @@ def run_pyosmium_ingestion(pbf_filename, filter_place_name):
     # as we are just creating an in-memory GeoDataFrame.
     # A more advanced test could measure peak memory usage.
     result_data = {
-        'use_case': '1. Ingestion & Filtering',
+        'use_case': '1. Ingestion & 2. Filtering',
         'technology': 'PyOsmium + GeoPandas',
         'operation_description': f'Read PBF and filter for {filter_place_name}',
         'test_dataset': pbf_path.name,

@@ -16,13 +16,13 @@ def run_simple_conversion_test():
     os.makedirs(raw_data_dir, exist_ok=True)
 
     if not pbf_path.exists():
-        print(f"Test file not found. Downloading from {pbf_url}...")
+        print(f"Test file not found. Downloading from {pbf_url}.")
         urllib.request.urlretrieve(pbf_url, pbf_path)
-        print(f"Download complete. File saved to {pbf_path}")
+        print(f"Download complete. File saved to {pbf_path}.")
     else:
         print(f"Test file already exists at {pbf_path}.")
 
-    print(f"Attempting the conversion for: {pbf_path}")
+    print(f"Attempting the conversion for: {pbf_path}.")
 
     try:
         # The function takes the INPUT path and returns the OUTPUT path.
@@ -33,10 +33,10 @@ def run_simple_conversion_test():
         )
 
         print(f"\nThe conversion worked without crashing.")
-        print(f"The output file has been created at: {created_parquet_path}")
+        print(f"The output file has been created at: {created_parquet_path}.")
 
     except Exception as e:
-        print(f"\nERROR! The conversion failed with a clear exception: {e}")
+        print(f"\nERROR! The conversion failed with a clear exception: {e}.")
         import traceback
         traceback.print_exc()
 

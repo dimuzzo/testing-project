@@ -43,11 +43,11 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     # Get file size in bytes and convert to MegaBytes (MB)
     output_size_bytes = output_file.stat().st_size
     output_size_mb = output_size_bytes / (1024 * 1024)
-    print(f"Output file size: {output_size_mb:.2f} MB")
+    print(f"Output file size: {output_size_mb:.2f} MB.")
 
     # Prepare and save the benchmark results
     result_data = {
-        'use_case': '1. Ingestion & Filtering',
+        'use_case': '1. Ingestion & 2. Filtering',
         'technology': 'QuackOSM',
         'operation_description': f'Extract and save buildings for {place_name}',
         'test_dataset': pbf_path.name,
@@ -64,14 +64,14 @@ if __name__ == '__main__':
     PLACE = 'Milan, Italy'
     OUTPUT_FILENAME = 'milan_buildings_from_italy_pbf.geoparquet'
 
-    print(f"Running Benchmark: Use Case 1 (PBF: {PBF_FILE})")
+    print(f"Running Benchmark: Use Cases 1 & 2 (PBF: {PBF_FILE}).")
 
     # Use a try/except block to handle potential crashes
     try:
         run_quackosm_ingestion(PBF_FILE, PLACE, OUTPUT_FILENAME)
-        print("Benchmark for Use Case 1 finished successfully.")
+        print("Benchmark for Use Cases 1 & 2 finished successfully.")
     except Exception as e:
         print(f"\nERROR: The script failed with an exception.")
-        print(f"Error details: {e}")
+        print(f"Error details: {e}.")
         import traceback
         traceback.print_exc()
