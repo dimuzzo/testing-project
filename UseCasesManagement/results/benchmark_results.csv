@@ -1,6 +1,6 @@
 use_case,technology,operation_description,test_dataset,execution_time_s,output_size_mb,notes
-1. Ingestion & Filtering,QuackOSM,"Extract and save buildings for Milan, Italy",italy-latest.osm.pbf,350.3263044999985,6.97,Found 62133 buildings. Forced row_group_size=10000.
-1. Ingestion & Filtering,PostGIS,"Extract buildings query for Milan, Italy",italy-latest.osm.pbf,0.35305259999950067,N/A,Query Time only. Found 62127 buildings.
-1. Ingestion & Filtering,PyOsmium + GeoPandas,"Read PBF and filter for Milan, Italy",lombardy-latest.osm.pbf,241.88006829999995,N/A,"Read 1781547 buildings from PBF, then filtered to 60273 for the target area."
-2. Analysis (Single Table),DuckDB Spatial,Calculate average area,milan_buildings_from_italy_pbf.geoparquet,0.7254548000000796,N/A,Query returned 1 rows.
-2. Analysis (Single Table),DuckDB Spatial,Calculate top 10 largest,milan_buildings_from_italy_pbf.geoparquet,0.19536170000174025,N/A,Query returned 10 rows.
+1. Ingestion & 2. Filtering,QuackOSM,"Extract and save buildings for Milan, Italy",italy-latest.osm.pbf,350.3263044999985,6.97,Found 62133 buildings. Forced row_group_size=10000.
+1. Ingestion & 2. Filtering,PostGIS,"Extract buildings query for Milan, Italy",italy-latest.osm.pbf,0.35305259999950067,N/A,Query Time only. Found 62127 buildings.
+1. Ingestion & 2. Filtering,PyOsmium + GeoPandas,"Read PBF (ways+relations) and filter for Milan, Italy",lombardy-latest.osm.pbf,316.4577792,N/A,"Processed 1788050 features, filtered to 62015 for target area."
+3. Analysis (Single Table),DuckDB Spatial,Calculate average area,milan_buildings_from_italy_pbf.geoparquet,0.7254548000000796,N/A,Query returned 1 rows.
+3. Analysis (Single Table),DuckDB Spatial,Calculate top 10 largest,milan_buildings_from_italy_pbf.geoparquet,0.19536170000174025,N/A,Query returned 10 rows.
