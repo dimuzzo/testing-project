@@ -47,7 +47,7 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
 
     # Prepare and save the benchmark results
     result_data = {
-        'use_case': '1. Ingestion & 2. Filtering',
+        'use_case': '1. Ingestion & 2. Filtering (OSM Data)',
         'technology': 'QuackOSM',
         'operation_description': f'Extract and save buildings for {place_name}',
         'test_dataset': pbf_path.name,

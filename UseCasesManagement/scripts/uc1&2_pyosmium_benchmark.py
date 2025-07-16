@@ -89,7 +89,7 @@ def run_pyosmium_ingestion(pbf_filename, filter_place_name):
     print(f"PyOsmium ingestion & filtering completed in {t.interval:.4f} seconds.")
 
     result_data = {
-        'use_case': '1. Ingestion & 2. Filtering',
+        'use_case': '1. Ingestion & 2. Filtering (OSM Data)',
         'technology': 'PyOsmium + GeoPandas',
         'operation_description': f'Read PBF (ways+relations) and filter for {filter_place_name}',
         'test_dataset': pbf_path.name,

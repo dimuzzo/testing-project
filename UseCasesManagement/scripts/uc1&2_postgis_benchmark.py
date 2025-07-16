@@ -46,7 +46,7 @@ def run_postgis_extraction(place_name, pbf_filename):
         # For this test, 'output_size_mb' is not directly applicable
         # as we are using an external DataBase on Postgresql.
         result_data = {
-            'use_case': '1. Ingestion & 2. Filtering',
+            'use_case': '1. Ingestion & 2. Filtering (OSM Data)',
             'technology': 'PostGIS',
             'operation_description': f'Extract buildings query for {place_name}',
             'test_dataset': pbf_filename,
@@ -56,6 +56,12 @@ def run_postgis_extraction(place_name, pbf_filename):
         }
         save_results(result_data)
 
+    except psycopg2.OperationalError as e:
+        print(f"SKIPPING PostGIS test: Could not connect to database. Please check connection details and ensure the server is running.")
+        print(f"Error: {e}.")
+    except psycopg2.errors.UndefinedTable:
+        print(f"SKIPPING PostGIS test: Table 'planet_osm_polygon' not found.")
+        print(f"Please run the 'osm2pgsql' command first to import the data.")
     except Exception as e:
         print(f"An error occurred: {e}.")
     finally:

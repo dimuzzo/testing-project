@@ -116,7 +116,7 @@ def run_duckdb_single_table_benchmark(input_file_path):
         print(result_df.to_string(index=False))
 
         result_data = {
-            'use_case': '3. Single Table Analysis',
+            'use_case': '3. Single Table Analysis (OSM Data)',
             'technology': 'DuckDB Spatial',
             'operation_description': op['name'],
             'test_dataset': input_file_path.name,
