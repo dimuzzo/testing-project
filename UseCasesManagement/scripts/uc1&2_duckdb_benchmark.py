@@ -64,8 +64,6 @@ if __name__ == '__main__':
     PLACE = 'Milan, Italy'
     OUTPUT_FILENAME = 'milan_buildings_from_italy_pbf.geoparquet'
 
-    print(f"Running Benchmark: Use Cases 1 & 2 (PBF: {PBF_FILE}).")
-
     # Use a try/except block to handle potential crashes
     try:
         run_quackosm_ingestion(PBF_FILE, PLACE, OUTPUT_FILENAME)
