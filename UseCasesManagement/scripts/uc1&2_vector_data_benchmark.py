@@ -3,6 +3,7 @@ import duckdb
 import psycopg2
 from pathlib import Path
 import sys
+import os
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -12,6 +13,7 @@ from utils import Timer, save_results
 CURRENT_SCRIPT_PATH = Path(__file__).resolve()
 WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent
 SHAPEFILE_PATH = WORKING_ROOT / 'data' / 'raw' / 'comuni_istat' / 'Com01012025_WGS84.shp'
+PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
 
 def run_duckdb_benchmark():
     con = duckdb.connect(database=':memory:')
@@ -37,10 +39,24 @@ def run_duckdb_benchmark():
 
     # Use Case 2: Filtering
     print("\nTesting DuckDB Spatial filtering for vector data.")
-    filtering_query = "SELECT * FROM comuni WHERE cod_reg = 1;"
+    # Must convert the geometries in WKB format or the output size can't be measured
+    filtering_query = "SELECT *, ST_AsWKB(geom) as geom_wkb FROM comuni WHERE COD_REG = 1;"
     with Timer() as t:
         result_df = con.execute(filtering_query).df()
     print(f"DuckDB filtered to {len(result_df)} features in {t.interval:.4f}s.")
+
+    output_path = PROCESSED_DATA_DIR / 'comuni_piemonte_duckdb.geoparquet'
+    os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
+    # Create the correct GeoDataFrame, dropping temporary geometry columns ('geom' and 'geom_wkb')
+    # after creating the proper 'geometry' series.
+    result_gdf = gpd.GeoDataFrame(
+        result_df.drop(columns=['geom', 'geom_wkb']),
+        geometry=gpd.GeoSeries.from_wkb(result_df['geom_wkb'].apply(bytes)),
+        crs="EPSG:4326"
+    )
+    result_gdf.to_parquet(output_path)
+    output_size_bytes = output_path.stat().st_size
+    output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
     save_results({
         'use_case': '2. Filtering (Vector Data)',
@@ -48,7 +64,7 @@ def run_duckdb_benchmark():
         'operation_description': 'Filter municipalities by region code from memory',
         'test_dataset': SHAPEFILE_PATH.name,
         'execution_time_s': t.interval,
-        'output_size_mb': 'N/A',
+        'output_size_mb': output_size_mb,
         'notes': f'Filtered for cod_reg == 1.'
     })
 
@@ -115,13 +131,19 @@ def run_geopandas_benchmark():
         piedmont_gdf = gdf[gdf['COD_REG'] == 1]
     print(f"GeoPandas filtered to {len(piedmont_gdf)} features in {t.interval:.4f}s.")
 
+    output_path = PROCESSED_DATA_DIR / 'comuni_piemonte_geopandas.geoparquet'
+    os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
+    piedmont_gdf.to_parquet(output_path)
+    output_size_bytes = output_path.stat().st_size
+    output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
+
     save_results({
         'use_case': '2. Filtering (Vector Data)',
         'technology': 'GeoPandas',
         'operation_description': 'Filter municipalities by region code from memory',
         'test_dataset': SHAPEFILE_PATH.name,
         'execution_time_s': t.interval,
-        'output_size_mb': 'N/A',
+        'output_size_mb': output_size_mb,
         'notes': f'Filtered for cod_reg == 1.'
     })
 
