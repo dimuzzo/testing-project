@@ -12,8 +12,8 @@ use_case,technology,operation_description,test_dataset,execution_time_s,output_s
 3. Single Table Analysis (OSM Data),DuckDB Spatial,3.8. Count by Area Class,milan_buildings_from_italy_pbf.geoparquet,0.1867759999986447,N/A,Query returned 1 rows.
 3. Single Table Analysis (OSM Data),DuckDB Spatial,3.9. Top 5 Least Convex,milan_buildings_from_italy_pbf.geoparquet,0.5720772000004217,N/A,Query returned 5 rows.
 3. Single Table Analysis (OSM Data),DuckDB Spatial,3.10. Simplify Geometries,milan_buildings_from_italy_pbf.geoparquet,0.0013070999993942678,N/A,Query returned 1 rows.
-1. Ingestion (Vector Data),DuckDB Spatial,Load Shapefile using ST_Read,Com01012025_WGS84.shp,0.47212579999904847,N/A,Loaded 7896 polygons into in-memory table.
-2. Filtering (Vector Data),DuckDB Spatial,Filter municipalities by region code from memory,Com01012025_WGS84.shp,0.012983599999643047,N/A,Filtered for cod_reg == 1.
-2. Filtering (Vector Data),PostGIS,Filter municipalities by region code from DB table,Com01012025_WGS84.shp,0.100892999998905,N/A,Query Time only. Data should be pre-loaded with shp2pgsql.
-1. Ingestion (Vector Data),GeoPandas,Load Shapefile into GeoDataFrame,Com01012025_WGS84.shp,0.4858079000005091,N/A,Loaded 7896 polygons into memory.
-2. Filtering (Vector Data),GeoPandas,Filter municipalities by region code from memory,Com01012025_WGS84.shp,0.0010110000002896413,N/A,Filtered for cod_reg == 1.
+1. Ingestion (Vector Data),DuckDB Spatial,Load Shapefile using ST_Read,Com01012025_WGS84.shp,0.39986839999983204,N/A,Loaded 7896 polygons into in-memory table.
+2. Filtering (Vector Data),DuckDB Spatial,Filter municipalities by region code from memory,Com01012025_WGS84.shp,0.027387799999814888,12.5688,Filtered for cod_reg == 1.
+2. Filtering (Vector Data),PostGIS,Filter municipalities by region code from DB table,Com01012025_WGS84.shp,0.09999650000008842,N/A,Query Time only. Data should be pre-loaded with shp2pgsql.
+1. Ingestion (Vector Data),GeoPandas,Load Shapefile into GeoDataFrame,Com01012025_WGS84.shp,0.46158199999990757,N/A,Loaded 7896 polygons into memory.
+2. Filtering (Vector Data),GeoPandas,Filter municipalities by region code from memory,Com01012025_WGS84.shp,0.0014589000002160901,12.5801,Filtered for cod_reg == 1.
