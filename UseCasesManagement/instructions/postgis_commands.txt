@@ -7,13 +7,13 @@ How to enable the PostGIS extension in your Database:
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Commands to use osm2pgsql for importing .pbf data into PostGIS DBs via your CMD/Powershell:
+Commands to use osm2pgsql for importing PBF (OSM) data into PostGIS DBs via your CMD/Powershell:
 
 1. Install the .zip file to use osm2pgsql from the website 'https://osm2pgsql.org/doc/install/windows.html' (if you are on Windows) and extract it.
 
 2. Modify your environment PATH with the directory path which contains the osm2pgsql.exe file.
 
-3. Open your CMD/Powershell at that specific path.
+3. Open your CMD/Powershell (even Anaconda Powershell) at that specific path.
 
 4. Use this specific command:
 'Measure-Command {
@@ -28,5 +28,16 @@ How to retrieve the Database size via Postgresql:
 2. Connect with the server that has the Database 'osm_benchmark_db'.
 3. Right click on the Database and select Query Tool.
 4. Use the command 'SELECT pg_size_pretty( pg_database_size('osm_benchmark_db') );'.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Commands to use shp2pgsql for importing pure vector data into PostGIS DBs via your CMD/Powershell:
+
+1. Open your CMD/Powershell (even Anaconda Powershell) at that specific path.
+
+2. Use this specific command:
+'Measure-Command {
+    shp2pgsql -s 4326 -I -W "latin1" "...\testing-project\UseCasesManagement\data\raw\comuni_istat\Com01012025_WGS84.shp" public.comuni_istat | psql -d osm_benchmark_db -U postgres
+    }'
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
