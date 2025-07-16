@@ -86,7 +86,7 @@ def run_postgis_benchmark():
         print(f"SKIPPING PostGIS test: Table 'comuni_istat' not found.")
         print(f"Please run the 'shp2pgsql' command first to import the data.")
     except Exception as e:
-        print(f"An error occurred during PostGIS test: {e}")
+        print(f"An error occurred during PostGIS test: {e}.")
     finally:
         if conn:
             conn.close()
