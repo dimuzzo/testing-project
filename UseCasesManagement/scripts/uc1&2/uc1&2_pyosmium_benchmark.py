@@ -7,7 +7,7 @@ import sys
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from utils import Timer, save_results
+from benchmark_utils import Timer, save_results
 
 class BuildingHandler(osmium.SimpleHandler):
     """

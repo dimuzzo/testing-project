@@ -1,7 +1,7 @@
 import psycopg2
 import osmnx as ox
 from pathlib import Path
-from utils import Timer, save_results
+from benchmark_utils import Timer, save_results
 
 # DB Connection Details
 DB_NAME = "osm_benchmark_db"

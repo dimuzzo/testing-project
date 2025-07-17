@@ -2,7 +2,7 @@ import os
 import quackosm
 import osmnx as ox
 from pathlib import Path
-from utils import Timer, save_results
+from benchmark_utils import Timer, save_results
 
 def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     """
