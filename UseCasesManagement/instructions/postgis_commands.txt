@@ -41,3 +41,15 @@ Commands to use shp2pgsql for importing pure vector data into PostGIS DBs via yo
     }'
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[TO FIX]
+
+Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via your CMD/Powershell:
+
+1. Open your CMD/Powershell (even Anaconda Powershell) at that specific path.
+
+2. Use this specific command:
+'Measure-Command {
+    raster2pgsql -s 4326 -I -C -F -t 100x100 "...\testing-projectUseCasesManagement\data\raw\raster\w49540_s10.tif" public.dem_table | psql -d osm_benchmark_db -U postgres
+    }'
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
