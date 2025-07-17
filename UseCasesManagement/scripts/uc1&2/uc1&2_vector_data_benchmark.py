@@ -6,12 +6,12 @@ import sys
 import os
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-from utils import Timer, save_results
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from benchmark_utils import Timer, save_results
 
 # Global Path Setup
 CURRENT_SCRIPT_PATH = Path(__file__).resolve()
-WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent
+WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent.parent
 SHAPEFILE_PATH = WORKING_ROOT / 'data' / 'raw' / 'comuni_istat' / 'Com01012025_WGS84.shp'
 PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
 

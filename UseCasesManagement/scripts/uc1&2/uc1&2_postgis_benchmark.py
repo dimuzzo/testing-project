@@ -1,6 +1,10 @@
 import psycopg2
 import osmnx as ox
 from pathlib import Path
+import sys
+
+# Add the parent directory of 'scripts' to the Python path to find 'utils'
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmark_utils import Timer, save_results
 
 # DB Connection Details

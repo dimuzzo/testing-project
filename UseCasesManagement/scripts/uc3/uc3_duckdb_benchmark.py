@@ -2,9 +2,9 @@ import duckdb
 from pathlib import Path
 import sys
 
-# Add the parent directory of 'scripts' to the Python path to find 'utils'.
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-from utils import Timer, save_results
+# Add the parent directory of 'scripts' to the Python path to find 'utils'
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from benchmark_utils import Timer, save_results
 
 def run_duckdb_single_table_benchmark(input_file_path):
     """
@@ -130,7 +130,7 @@ def run_duckdb_single_table_benchmark(input_file_path):
 
 if __name__ == '__main__':
     current_script_path = Path(__file__).resolve()
-    working_root = current_script_path.parent.parent
+    working_root = current_script_path.parent.parent.parent
     input_file = working_root / 'data' / 'processed' / 'milan_buildings_from_italy_pbf.geoparquet'
 
     if not input_file.exists():

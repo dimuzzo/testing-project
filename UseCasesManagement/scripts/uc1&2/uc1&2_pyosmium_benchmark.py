@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmark_utils import Timer, save_results
 
 class BuildingHandler(osmium.SimpleHandler):
@@ -64,11 +64,11 @@ def run_pyosmium_ingestion(pbf_filename, filter_place_name):
     print(f"Testing PyOsmium + GeoPandas ingestion & filtering for {filter_place_name}.")
 
     current_script_path = Path(__file__).resolve()
-    working_root = current_script_path.parent.parent
+    working_root = current_script_path.parent.parent.parent
     pbf_path = working_root / 'data' / 'raw' / pbf_filename
 
     with Timer() as t:
-        # SProcess the PBF file with the handler
+        # Process the PBF file with the handler
         handler = BuildingHandler()
         print(f"Reading PBF file {pbf_path.name} with PyOsmium.")
         handler.apply_file(str(pbf_path), locations=True)

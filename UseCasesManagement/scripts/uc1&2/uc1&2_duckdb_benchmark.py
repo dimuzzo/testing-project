@@ -1,7 +1,11 @@
 import os
+import sys
+from pathlib import Path
 import quackosm
 import osmnx as ox
-from pathlib import Path
+
+# Add the parent directory of 'scripts' to the Python path to find 'utils'
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmark_utils import Timer, save_results
 
 def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
@@ -10,7 +14,7 @@ def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
     """
     # Define robust paths using pathlib
     current_script_path = Path(__file__).resolve()
-    working_root = current_script_path.parent.parent  # Navigates up to the 'UseCasesManagement' folder
+    working_root = current_script_path.parent.parent.parent  # Navigates up to the 'UseCasesManagement' folder
 
     pbf_path = working_root / 'data' / 'raw' / pbf_filename
     output_dir = working_root / 'data' / 'processed'
