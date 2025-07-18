@@ -1,18 +1,15 @@
-# This code needs improvements, it has a lot of things to be fixed as Raster data are difficult to
-# be implemented via PostgreSQL.
-
 import rasterio
 import rasterio.mask
-import geopandas as gpd
+# import geopandas as gpd, wrote just as a reminder of the technologies used in the project
 import osmnx as ox
-import duckdb
+# import duckdb, wrote just as a reminder of the technologies used in the project
 import psycopg2
 from pathlib import Path
 import sys
 import os
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
-sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmark_utils import Timer, save_results
 
 # Global Path Setup
@@ -30,8 +27,8 @@ def run_duckdb_benchmark():
         'technology': 'DuckDB Spatial',
         'operation_description': 'Load GeoTIFF file',
         'test_dataset': RASTER_PATH.name,
-        'execution_time_s': 'N/A',
-        'output_size_mb': 'N/A',
+        'execution_time_s': 0.0,
+        'output_size_mb': 0.0,
         'notes': 'Technology not supported for this data type.'
     })
 
@@ -43,8 +40,8 @@ def run_duckdb_benchmark():
         'technology': 'DuckDB Spatial',
         'operation_description': 'Clip raster with a vector polygon',
         'test_dataset': RASTER_PATH.name,
-        'execution_time_s': 'N/A',
-        'output_size_mb': 'N/A',
+        'execution_time_s': 0.0,
+        'output_size_mb': 0.0,
         'notes': 'Technology not supported for this data type.'
     })
 
@@ -115,6 +112,8 @@ def run_python_raster_benchmark():
 
     with Timer() as t:
         with rasterio.open(RASTER_PATH) as src:
+            # Reprojects the border into the CRS of the raster
+            boundary_gdf = boundary_gdf.to_crs(src.crs)
             out_image, out_transform = rasterio.mask.mask(src, boundary_gdf.geometry, crop=True)
             out_meta = src.meta
 
