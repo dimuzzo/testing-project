@@ -1,8 +1,11 @@
 How to enable the PostGIS extension in your Database:
 
 1. Open pgAdmin 4.
+
 2. Connect with the server that has the Database 'osm_benchmark_db'.
-3. Right click on the Database and select Query Tool.
+
+3. Right-click on the Database and select Query Tool.
+
 4. Use the command 'CREATE EXTENSION postgis;'.
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25,8 +28,11 @@ Commands to use osm2pgsql for importing PBF (OSM) data into PostGIS DBs via your
 How to retrieve the Database size via Postgresql:
 
 1. Open pgAdmin 4.
+
 2. Connect with the server that has the Database 'osm_benchmark_db'.
-3. Right click on the Database and select Query Tool.
+
+3. Right-click on the Database and select Query Tool.
+
 4. Use the command 'SELECT pg_size_pretty( pg_database_size('osm_benchmark_db') );'.
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -41,15 +47,22 @@ Commands to use shp2pgsql for importing pure vector data into PostGIS DBs via yo
     }'
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[TO FIX]
 
 Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via your CMD/Powershell:
 
-1. Open your CMD/Powershell (even Anaconda Powershell) at that specific path.
+1. Open pgAdmin 4.
 
-2. Use this specific command:
+2. Connect with the server that has the Database 'osm_benchmark_db'.
+
+3. Right-click on the Database and select Query Tool.
+
+4. Use the command 'CREATE EXTENSION postgis_raster;'.
+
+5. Open your CMD/Powershell (even Anaconda Powershell) at that specific path.
+
+6. Use this specific command:
 'Measure-Command {
-    raster2pgsql -s 4326 -I -C -F -t 100x100 "...\testing-projectUseCasesManagement\data\raw\raster\w49540_s10.tif" public.dem_table | psql -d osm_benchmark_db -U postgres
+    raster2pgsql -s 32632 -I -C -F -t 100x100 "...\testing-projectUseCasesManagement\data\raw\raster\w49540_s10.tif" public.dem_table | psql -d osm_benchmark_db -U postgres
     }'
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
