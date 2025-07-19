@@ -62,7 +62,7 @@ Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via
 
 6. Use this specific command:
 'Measure-Command {
-    raster2pgsql -s 32632 -I -C -F -t 100x100 "...\testing-projectUseCasesManagement\data\raw\raster\w49540_s10.tif" public.dem_table | psql -d osm_benchmark_db -U postgres
+    raster2pgsql -s 32632 -I -F "...\testing-projectUseCasesManagement\data\raw\raster\w49540_s10.tif" public.dem_table | psql -d osm_benchmark_db -U postgres
     }'
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
