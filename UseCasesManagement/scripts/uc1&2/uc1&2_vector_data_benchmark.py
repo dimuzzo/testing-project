@@ -21,6 +21,7 @@ def run_duckdb_benchmark():
 
     # Use Case 1: Ingestion
     print("\nTesting DuckDB Spatial ingestion for vector data.")
+    # The query reads the Shapefile from disk and loads it into a new table in a single step.
     ingestion_query = f"CREATE OR REPLACE TABLE comuni AS SELECT * FROM ST_Read('{str(SHAPEFILE_PATH).replace('\\', '/')}');"
     with Timer() as t:
         con.execute(ingestion_query)
@@ -39,7 +40,9 @@ def run_duckdb_benchmark():
 
     # Use Case 2: Filtering
     print("\nTesting DuckDB Spatial filtering for vector data.")
-    # Must convert the geometries in WKB format or the output size can't be measured
+    # The geometry must be converted to Well-Known Binary (WKB) format to measure the output size.
+    # This is a critical step for interoperability, allowing other libraries
+    # like GeoPandas to correctly parse the geometry from the resulting DataFrame.
     filtering_query = "SELECT *, ST_AsWKB(geom) as geom_wkb FROM comuni WHERE COD_REG = 1;"
     with Timer() as t:
         result_df = con.execute(filtering_query).df()
@@ -47,8 +50,10 @@ def run_duckdb_benchmark():
 
     output_path = PROCESSED_DATA_DIR / 'comuni_piemonte_duckdb.geoparquet'
     os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
-    # Create the correct GeoDataFrame, dropping temporary geometry columns ('geom' and 'geom_wkb')
-    # after creating the proper 'geometry' series.
+    # Reconstruct the GeoDataFrame from the Pandas DataFrame.
+    # Start by dropping temporary geometry columns ('geom' and 'geom_wkb').
+    # The gpd.GeoSeries.from_wkb function is the key to this process,
+    # deserializing the WKB byte strings back into Shapely geometry objects
     result_gdf = gpd.GeoDataFrame(
         result_df.drop(columns=['geom', 'geom_wkb']),
         geometry=gpd.GeoSeries.from_wkb(result_df['geom_wkb'].apply(bytes)),
@@ -71,16 +76,21 @@ def run_duckdb_benchmark():
     con.close()
 
 def run_postgis_benchmark():
+    # This test assumes the 'comuni_istat' table was preloaded using the shp2pgsql tool.
+    # The benchmark measures only the query execution time, not the initial ingestion cost.
     conn = None
     try:
         conn = psycopg2.connect(dbname='osm_benchmark_db', user='postgres', password='postgres', host='localhost', port='5432')
         # Use Case 2: Filtering
         print("\nTesting PostGIS filtering for vector data.")
-        # The table 'comuni_istat' should have been created during the manual import
+        # A standard SQL attribute filter. Performance depends on the PostgreSQL query optimizer,
+        # table statistics and the presence of a database index on the 'cod_reg' column.
         query = "SELECT * FROM comuni_istat WHERE cod_reg = 1;"
         with Timer() as t:
             cursor = conn.cursor()
             cursor.execute(query)
+            # The fetchall() command retrieves all query results from the database server
+            # to the Python client. The measured time therefore includes network latency.
             results = cursor.fetchall()
             cursor.close()
 
@@ -111,6 +121,8 @@ def run_geopandas_benchmark():
     # Use Case 1: Ingestion
     print("\nTesting GeoPandas ingestion for vector data.")
     with Timer() as t:
+        # gpd.read_file is the standard method for loading any vector file
+        # format supported by GDAL(Geospatial Data Abstraction Library)/Fiona directly into an in-memory GeoDataFrame.
         gdf = gpd.read_file(SHAPEFILE_PATH)
     print(f"GeoPandas loaded {len(gdf)} features in {t.interval:.4f}s.")
 
@@ -127,7 +139,9 @@ def run_geopandas_benchmark():
     # Use Case 2: Filtering
     print("\nTesting GeoPandas filtering for vector data.")
     with Timer() as t:
-        # Filter for municipalities in the province of Turin (COD_PROV = 1)
+        # Standard Pandas boolean indexing operation.
+        # It is highly optimized for in-memory data, which explains its
+        # extremely fast performance compared to database queries.
         piedmont_gdf = gdf[gdf['COD_REG'] == 1]
     print(f"GeoPandas filtered to {len(piedmont_gdf)} features in {t.interval:.4f}s.")
 

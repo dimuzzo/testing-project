@@ -18,6 +18,9 @@ WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent.parent
 RASTER_PATH = WORKING_ROOT / 'data' / 'raw' / 'raster' / 'w49540_s10.tif'
 PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
 
+# This section serves as a placeholder to maintain a consistent benchmark structure.
+# It explicitly documents that DuckDB currently lacks native raster support,
+# so these tests are skipped. The results are recorded as 0.0 for completeness.
 def run_duckdb_benchmark():
     # Use Case 1: Ingestion
     print("\nTesting DuckDB Spatial ingestion for raster data.")
@@ -46,14 +49,30 @@ def run_duckdb_benchmark():
     })
 
 def run_postgis_benchmark():
+    # This test measures the performance of a server-side raster clipping operation.
+    # It assumes the 'dem_table' was pre-loaded with the raster2pgsql tool.
     conn = None
     try:
         conn = psycopg2.connect(dbname="osm_benchmark_db", user="postgres", password="postgres", host="localhost")
         # Use Case 2: Filtering
         print("\nTesting PostGIS filtering for raster data.")
         area_gdf = ox.geocode_to_gdf("Turin, Italy")
+        # The vector polygon geometry is converted to Well-Known Text (WKT) format
+        # so it can be embedded directly into the SQL query string.
         area_wkt = area_gdf.geometry.iloc[0].wkt
 
+        # This query performs a complete server-side raster clipping.
+        # Here is a breakdown of the key PostGIS functions used:
+        # - ST_Intersects: Used in the WHERE clause as a fast spatial filter. It ensures that the
+        #   expensive clipping operation is only performed on raster tiles that actually overlap
+        #   with the Turin boundary, improving performance.
+        # - ST_Clip: This is the core function that cuts the raster `rast` using the provided
+        #   vector geometry.
+        # - ST_Transform(ST_SetSRID(ST_GeomFromText(...))): This nested block is crucial for
+        #   correctness. It takes the WKT of the Turin polygon, sets its native CRS to 4326,
+        #   and then transforms it on-the-fly to match the raster's CRS (ST_SRID(rast)).
+        # - ST_AsGDALRaster: After clipping, the resulting raster is converted back into a
+        #   standard format ('GTiff') that the Python client can receive and process.
         query = f"""
         SELECT ST_AsGDALRaster(ST_Clip(rast, ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast)) ), 'GTiff') 
         FROM public.dem_table
@@ -93,6 +112,9 @@ def run_python_raster_benchmark():
     # Use Case 1: Ingestion
     print("\nTesting Python ingestion for raster data.")
     with Timer() as t:
+        # rasterio.open() is a lazy-loading operation. It's extremely fast because
+        # it only reads the file's metadata (CRS, bounds, dimensions) and opens a
+        # file handle, without loading the large pixel array into RAM.
         with rasterio.open(RASTER_PATH) as src:
             notes = f'Opened file with {src.count} band(s) ({src.width}x{src.height}px).'
 
@@ -112,8 +134,11 @@ def run_python_raster_benchmark():
 
     with Timer() as t:
         with rasterio.open(RASTER_PATH) as src:
-            # Reprojects the border into the CRS of the raster
+            # The vector geometry's CRS must be transformed to match the raster's CRS.
+            # Failure to do this results in a "shapes do not overlap" error.
             boundary_gdf = boundary_gdf.to_crs(src.crs)
+            # rasterio.mask.mask reads the necessary chunks of the raster from disk,
+            # applies the vector mask in memory and returns the resulting image array.
             out_image, out_transform = rasterio.mask.mask(src, boundary_gdf.geometry, crop=True)
             out_meta = src.meta
 
@@ -134,7 +159,6 @@ def run_python_raster_benchmark():
         'output_size_mb': output_size_mb,
         'notes': 'Clipped DEM to Turin boundary.'
     })
-
 
 if __name__ == '__main__':
     print(f"Running Raster Data Benchmark.")
