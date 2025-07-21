@@ -108,9 +108,9 @@ def run_postgis_benchmark():
         if conn:
             conn.close()
 
-def run_python_raster_benchmark():
+def run_python_benchmark():
     # Use Case 1: Ingestion
-    print("\nTesting Python ingestion for raster data.")
+    print("\nTesting Pure Python ingestion for raster data.")
     with Timer() as t:
         # rasterio.open() is a lazy-loading operation. It's extremely fast because
         # it only reads the file's metadata (CRS, bounds, dimensions) and opens a
@@ -170,4 +170,4 @@ if __name__ == '__main__':
     else:
         run_duckdb_benchmark()
         run_postgis_benchmark()
-        run_python_raster_benchmark()
+        run_python_benchmark()

@@ -57,7 +57,7 @@ class BuildingHandler(osmium.SimpleHandler):
             except Exception:
                 pass
 
-def run_pyosmium_ingestion(pbf_filename, filter_place_name):
+def run_pyosmium_ingestion_and_filtering(pbf_filename, filter_place_name):
     """
     Runs the data ingestion benchmark using PyOsmium and GeoPandas, with a final filter.
     """
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     PBF_FILE = 'lombardy-latest.osm.pbf'
     PLACE_TO_FILTER = 'Milan, Italy'
 
-    run_pyosmium_ingestion(
+    run_pyosmium_ingestion_and_filtering(
         pbf_filename=PBF_FILE,
         filter_place_name=PLACE_TO_FILTER
     )

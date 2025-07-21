@@ -8,7 +8,7 @@ import osmnx as ox
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmark_utils import Timer, save_results
 
-def run_quackosm_ingestion(pbf_filename, place_name, output_filename):
+def run_duckdb_ingestion_and_filtering(pbf_filename, place_name, output_filename):
     """
     Runs the data ingestion and filtering benchmark for a given PBF file and place.
     """
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     # Use a try/except block to handle potential crashes
     try:
-        run_quackosm_ingestion(PBF_FILE, PLACE, OUTPUT_FILENAME)
+        run_duckdb_ingestion_and_filtering(PBF_FILE, PLACE, OUTPUT_FILENAME)
         print("Benchmark for Use Cases 1 & 2 finished successfully.")
     except Exception as e:
         print(f"\nERROR: The script failed with an exception.")
