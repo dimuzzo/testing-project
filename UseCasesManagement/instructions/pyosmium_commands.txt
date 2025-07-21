@@ -1,4 +1,4 @@
-You have to use Conda's Prompt to execute in a good way the script "usecase1_pyosmium_benchmark":
+You have to use Conda's Prompt to execute in a good way the script "uc1&2_pyosmium_benchmark":
 
 1. Install Miniconda.
 
