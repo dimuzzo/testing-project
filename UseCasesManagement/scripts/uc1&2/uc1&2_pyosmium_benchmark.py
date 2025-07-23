@@ -1,109 +1,182 @@
-import osmium
+import osmium as o
 import geopandas as gpd
-import osmnx as ox
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
 from pathlib import Path
 import sys
+import osmnx as ox
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmark_utils import Timer, save_results
 
-class BuildingHandler(osmium.SimpleHandler):
-    """
-    Osmium handler to process OSM ways and relations to build all building polygons.
-    """
+# Global Path Setup
+CURRENT_SCRIPT_PATH = Path(__file__).resolve()
+WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent.parent
+RAW_DATA_DIR = WORKING_ROOT / 'data' / 'raw'
+PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
+PBF_FILEPATH = RAW_DATA_DIR / 'lombardy-latest.osm.pbf'
+
+# This handler processes OSM PBF data to extract building geometries, including complex multipolygons (relations).
+class BuildingsHandler(o.SimpleHandler):
     def __init__(self):
-        super(BuildingHandler, self).__init__()
+        super(BuildingsHandler, self).__init__()
+        self.nodes_cache = {}
         self.ways_cache = {}
         self.buildings = []
 
-    def way(self, w):
-        # This method caches all closed ways and identifies simple buildings.
-        if w.is_closed() and len(w.nodes) > 2:
-            try:
-                coords = [(n.lon, n.lat) for n in w.nodes]
-                polygon = Polygon(coords)
-                self.ways_cache[w.id] = polygon
+    def node(self, n):
+        if 'building' in n.tags:
+            self.nodes_cache[n.id] = (n.location.lon, n.location.lat)
 
-                if 'building' in w.tags:
-                    self.buildings.append({
-                        'osm_id': f'way/{w.id}',
-                        'geometry': polygon,
-                        'name': w.tags.get('name', None)
-                    })
-            except osmium.InvalidLocationError:
-                pass
+    def way(self, w):
+        if 'building' in w.tags:
+            self.ways_cache[w.id] = {'nodes': [n.ref for n in w.nodes], 'tags': dict(w.tags)}
 
     def relation(self, r):
-        # This method assembles multipolygon buildings from cached ways.
-        if 'building' in r.tags and r.tags.get('type') == 'multipolygon':
+        if r.tags.get('type') == 'multipolygon' and 'building' in r.tags:
             try:
-                outer_rings = [self.ways_cache[m.ref] for m in r.members if
-                               m.role == 'outer' and m.ref in self.ways_cache]
-                inner_rings = [self.ways_cache[m.ref] for m in r.members if
-                               m.role == 'inner' and m.ref in self.ways_cache]
+                outer_rings = []
+                inner_rings = []
+                for member in r.members:
+                    if member.type == 'w':
+                        way = self.ways_cache.get(member.ref)
+                        if way:
+                            points = [self.nodes_cache[node_id] for node_id in way['nodes'] if
+                                      node_id in self.nodes_cache]
+                            if len(points) > 2:
+                                if member.role == 'outer':
+                                    outer_rings.append(points)
+                                elif member.role == 'inner':
+                                    inner_rings.append(points)
 
-                if not outer_rings:
-                    return
+                if outer_rings:
+                    polygon = MultiPolygon([Polygon(outer) for outer in outer_rings]) if len(
+                        outer_rings) > 1 else Polygon(outer_rings[0])
+                    if inner_rings:
+                        for inner in inner_rings:
+                            polygon = polygon.difference(Polygon(inner))
 
-                polygon_with_holes = Polygon(outer_rings[0].exterior.coords, [h.exterior.coords for h in inner_rings])
-
-                self.buildings.append({
-                    'osm_id': f'relation/{r.id}',
-                    'geometry': polygon_with_holes,
-                    'name': r.tags.get('name', None)
-                })
+                    self.buildings.append({'geometry': polygon, 'tags': dict(r.tags)})
             except Exception:
-                pass
+                pass  # Ignore malformed relations
 
-def run_pyosmium_ingestion_and_filtering(pbf_filename, filter_place_name):
+    # It converts the collected building data into a GeoDataFrame.
+    def get_geodataframe(self):
+        """Builds a GeoDataFrame from the processed ways and relations."""
+        # First, process simple ways that were not part of a relation
+        for way_id, way_data in self.ways_cache.items():
+            try:
+                points = [self.nodes_cache[node_id] for node_id in way_data['nodes'] if node_id in self.nodes_cache]
+                if len(points) > 2:
+                    self.buildings.append({'geometry': Polygon(points), 'tags': way_data['tags']})
+            except Exception:
+                pass  # Ignore malformed ways
+
+        if not self.buildings:
+            return gpd.GeoDataFrame([], columns=['geometry', 'tags'], crs="EPSG:4326")
+
+        return gpd.GeoDataFrame(self.buildings, crs="EPSG:4326")
+
+def run_pyosmium_ingestion_and_filtering(place_name, num_runs=100):
     """
-    Runs the data ingestion benchmark using PyOsmium and GeoPandas, with a final filter.
+    Runs the data ingestion and filtering benchmark using PyOsmium and GeoPandas, with a final filter,
+    separating cold and hot runs.
     """
-    print(f"Testing PyOsmium + GeoPandas ingestion & filtering for {filter_place_name}.")
+    place_name_clean = place_name.split(',')[0]
+    print(f"Testing PyOsmium + GeoPandas ingestion & filtering for {place_name_clean} buildings over {num_runs} runs.")
 
-    current_script_path = Path(__file__).resolve()
-    working_root = current_script_path.parent.parent.parent
-    pbf_path = working_root / 'data' / 'raw' / pbf_filename
+    if not PBF_FILEPATH.exists():
+        print(f"ERROR: PBF file not found at {PBF_FILEPATH}. Aborting.")
+        return
 
-    with Timer() as t:
-        # Process the PBF file with the handler
-        handler = BuildingHandler()
-        print(f"Reading PBF file {pbf_path.name} with PyOsmium.")
-        handler.apply_file(str(pbf_path), locations=True)
+    try:
+        print(f"Fetching boundary for {place_name}.")
+        boundary_gdf = ox.geocode_to_gdf(place_name)
+        boundary_geom = boundary_gdf.geometry.iloc[0]
+        print("Boundary fetched successfully.")
+    except Exception as e:
+        print(f"Could not fetch boundary for {place_name}. Error: {e}. Aborting benchmark.")
+        return
 
-        # Create the full GeoDataFrame
-        total_buildings_in_pbf = len(handler.buildings)
-        print(f"Found {total_buildings_in_pbf} total buildings (ways & relations). Creating GeoDataFrame.")
-        gdf_full = gpd.GeoDataFrame(handler.buildings, crs="EPSG:4326")
+    cold_start_time = None
+    hot_start_times = []
+    last_successful_gdf = None
 
-        # Clean and filter the data
-        print("Cleaning and filtering geometries.")
-        gdf_full['geometry'] = gdf_full.geometry.buffer(0)
-        boundary_gdf = ox.geocode_to_gdf(filter_place_name)
-        gdf_filtered = gpd.sjoin(gdf_full, boundary_gdf, how='inner', predicate='intersects')
+    # Cold start run
+    print("\nRunning Cold Start (First run).")
+    try:
+        with Timer() as t:
+            handler = BuildingsHandler()
+            handler.apply_file(str(PBF_FILEPATH), locations=True)
+            all_buildings_gdf = handler.get_geodataframe()
+            final_gdf = all_buildings_gdf[all_buildings_gdf.intersects(boundary_geom)]
+        cold_start_time = t.interval
+        last_successful_gdf = final_gdf
+        print(f"Cold start completed in {cold_start_time:.4f}s. Found {len(final_gdf)} features.")
+    except Exception as e:
+        print(f"Cold start run failed. Error: {e}. Aborting subsequent runs.")
+        return
 
-        print(f"Filtered down to {len(gdf_filtered)} buildings for {filter_place_name}.")
+    # Hot start runs
+    if num_runs > 1:
+        print("\n--- Running Hot Starts ---")
+        for i in range(num_runs - 1):
+            with Timer() as t:
+                handler = BuildingsHandler()
+                handler.apply_file(str(PBF_FILEPATH), locations=True)
+                all_buildings_gdf = handler.get_geodataframe()
+                _ = all_buildings_gdf[all_buildings_gdf.intersects(boundary_geom)]
+            hot_start_times.append(t.interval)
+            print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+        print("\n")
 
-    print(f"PyOsmium ingestion & filtering completed in {t.interval:.4f} seconds.")
+        # After the loop, calculate and save results
+        print("Benchmark run summary:")
+        # Process and save cold start result
+        if cold_start_time is not None:
+            num_features = len(last_successful_gdf)
+            output_filename = f"{place_name_clean.lower()}_buildings_duckdb.geoparquet"
+            output_path = PROCESSED_DATA_DIR / output_filename
+            PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+            last_successful_gdf.to_parquet(output_path)
+            output_size_mb = 'N/A'  # Size calculation is optional here
 
-    result_data = {
-        'use_case': '1. Ingestion & 2. Filtering (OSM Data)',
-        'technology': 'PyOsmium + GeoPandas',
-        'operation_description': f'Read PBF (ways+relations) and filter for {filter_place_name}',
-        'test_dataset': pbf_path.name,
-        'execution_time_s': t.interval,
-        'output_size_mb': 'N/A',
-        'notes': f'Processed {total_buildings_in_pbf} features, filtered to {len(gdf_filtered)} for target area.'
-    }
-    save_results(result_data)
+            # Save cold start result
+            cold_result = {
+                'use_case': '1&2. Ingestion & Filtering (OSM Data)',
+                'technology': 'PyOsmium + GeoPandas',
+                'operation_description': f'Extract {place_name_clean} buildings from PBF',
+                'test_dataset': PBF_FILEPATH.name,
+                'execution_time_s': cold_start_time,
+                'num_runs': 1,
+                'output_size_mb': output_size_mb,
+                'notes': f'Found {num_features} buildings. Cold start (first run).'
+            }
+            save_results(cold_result)
+            print(f"Cold start result saved. Time: {cold_start_time:.4f}s, Features: {num_features}.")
+
+        # Process and save hot start results
+        if len(hot_start_times) > 0:
+            average_hot_time = sum(hot_start_times) / len(hot_start_times)
+            hot_result = {
+                'use_case': '1&2. Ingestion & Filtering (OSM Data)',
+                'technology': 'PyOsmium + GeoPandas',
+                'operation_description': f'Extract {place_name_clean} buildings from PBF',
+                'test_dataset': PBF_FILEPATH.name,
+                'execution_time_s': average_hot_time,
+                'num_runs': len(hot_start_times),
+                'output_size_mb': output_size_mb,
+                'notes': f'Found {num_features} buildings. Average of {len(hot_start_times)} hot cache runs.'
+            }
+            save_results(hot_result)
+            print(f"Average hot start time: {average_hot_time:.4f}s over {len(hot_start_times)} runs.")
+            print("Hot start average result saved.")
+        else:
+            print("No successful runs to save.")
 
 if __name__ == '__main__':
-    PBF_FILE = 'lombardy-latest.osm.pbf'
-    PLACE_TO_FILTER = 'Milan, Italy'
+    # This is the only variable you can to change to test a different place.
+    PLACE_TO_BENCHMARK = "Milan, Italy"
+    NUMBER_OF_RUNS = 100
 
-    run_pyosmium_ingestion_and_filtering(
-        pbf_filename=PBF_FILE,
-        filter_place_name=PLACE_TO_FILTER
-    )
+    run_pyosmium_ingestion_and_filtering(place_name=PLACE_TO_BENCHMARK, num_runs=NUMBER_OF_RUNS)
