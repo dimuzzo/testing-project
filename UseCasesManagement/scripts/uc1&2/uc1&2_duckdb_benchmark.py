@@ -101,9 +101,6 @@ def run_duckdb_ingestion_and_filtering(place_name, num_runs=100):
     # Process and save hot start results
     if len(hot_start_times) > 0:
         average_hot_time = sum(hot_start_times) / len(hot_start_times)
-        print(f"Average hot start time: {average_hot_time:.4f}s over {len(hot_start_times)} runs.")
-
-        # Save hot start average result
         hot_result = {
             'use_case': '1&2. Ingestion & Filtering (OSM Data)',
             'technology': 'DuckDB + Quackosm',
@@ -115,6 +112,7 @@ def run_duckdb_ingestion_and_filtering(place_name, num_runs=100):
             'notes': f'Found {num_features} buildings for {place_name_clean}. Average of {len(hot_start_times)} hot cache runs.'
         }
         save_results(hot_result)
+        print(f"Average hot start time: {average_hot_time:.4f}s over {len(hot_start_times)} runs.")
         print("Hot start average result saved.")
     else:
         print("No successful runs to save.")

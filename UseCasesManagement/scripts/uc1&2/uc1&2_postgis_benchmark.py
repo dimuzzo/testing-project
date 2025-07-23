@@ -96,8 +96,8 @@ def run_postgis_extraction(place_name, num_runs=100):
         save_results(cold_result)
         print("Cold start result saved.")
 
-        # Save hot start average result
-        if hot_start_times:
+        # Process and save hot start results
+        if len(hot_start_times) > 0:
             average_hot_time = sum(hot_start_times) / len(hot_start_times)
             hot_result  = {
                 'use_case': '1&2. Filtering (OSM Data)',
@@ -110,8 +110,10 @@ def run_postgis_extraction(place_name, num_runs=100):
                 'notes': f'Found {num_features} buildings. Average of {len(hot_start_times)} hot cache query times.'
             }
             save_results(hot_result)
-            print(f"Average hot start time: {average_hot_time:.4f}s.")
+            print(f"Average hot start time: {average_hot_time:.4f}s over {len(hot_start_times)} runs.")
             print("Hot start average result saved.")
+        else:
+            print("No successful runs to save.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
