@@ -24,7 +24,7 @@ def save_results(result_data, results_file='benchmark_results.csv'):
     # Field names for the CSV file headers
     fieldnames = [
         'use_case', 'technology', 'operation_description', 'test_dataset',
-        'avg_execution_time_s', 'num_runs', 'output_size_mb', 'notes'
+        'execution_time_s', 'num_runs', 'output_size_mb', 'notes'
     ]
 
     # Check if the file exists to write headers only once
@@ -37,9 +37,4 @@ def save_results(result_data, results_file='benchmark_results.csv'):
 
         # Prepare a dictionary with all required fields, providing defaults
         row_dict = {field: result_data.get(field, 'N/A') for field in fieldnames}
-
-        # Handle new field names from the input dictionary
-        row_dict['avg_execution_time_s'] = result_data.get('execution_time_s', 'N/A')
-        row_dict['num_runs'] = result_data.get('num_runs', 1) # Default to 1 run if not specified
-
         writer.writerow(row_dict)
