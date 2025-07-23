@@ -23,84 +23,99 @@ def run_duckdb_ingestion_and_filtering(place_name, num_runs=100):
     print(f"Testing DuckDB + QuackOSM ingestion & filtering for {place_name_clean} buildings over {num_runs} runs.")
 
     if not PBF_FILEPATH.exists():
-        print(f"ERROR: PBF file not found at {PBF_FILEPATH}. Aborting.")
+        print(f"ERROR: PBF file not found at {PBF_FILEPATH}. Aborting the tests.")
         return
 
-    execution_times = []
-    successful_runs = 0
-    failed_runs = 0
-    last_successful_gdf = None  # To store the result for saving later
-
     try:
-        # Get the boundary once before the loop to avoid repeated network calls
-        print(f"Fetching boundary for {place_name}...")
+        print(f"Fetching boundary for {place_name}.")
         boundary_gdf = ox.geocode_to_gdf(place_name)
         print("Boundary fetched successfully.")
     except Exception as e:
         print(f"Could not fetch boundary for {place_name}. Error: {e}. Aborting benchmark.")
         return
 
-    for i in range(num_runs):
-        try:
-            with Timer() as t:
-                # The PbfFileReader is re-initialized on each run to ensure
-                # we are measuring the full process, though caching may still occur.
-                pbf_reader = quackosm.PbfFileReader(
-                    geometry_filter=boundary_gdf.geometry.iloc[0],
-                    tags_filter={'building': True}
-                )
-                features_gdf = pbf_reader.convert_pbf_to_geodataframe(PBF_FILEPATH)
+    pbf_reader = quackosm.PbfFileReader(
+        geometry_filter=boundary_gdf.geometry.iloc[0],
+        tags_filter={'building': True}
+    )
 
-            execution_times.append(t.interval)
-            successful_runs += 1
-            last_successful_gdf = features_gdf  # Save the result of the last successful run
-            # Using carriage return '\r' to print on the same line for cleaner output
-            print(f"Run {i + 1}/{num_runs} completed successfully in {t.interval:.4f}s.", end='\r')
+    cold_start_time = None
+    hot_start_times = []
+    last_successful_gdf = None
 
-        except Exception as e:
-            failed_runs += 1
-            print(f"\nRun {i + 1}/{num_runs} failed. Error: {e}")
+    # Cold start run
+    print("\nRunning Cold Start (First run).")
+    try:
+        with Timer() as t:
+            features_gdf = pbf_reader.convert_pbf_to_geodataframe(PBF_FILEPATH)
+        cold_start_time = t.interval
+        last_successful_gdf = features_gdf
+        print(f"Cold start completed in {cold_start_time:.4f}s.")
+    except Exception as e:
+        print(f"Cold start run failed. Error: {e}. Aborting subsequent runs.")
+        return  # Abort if the first run fails
 
-    # Print a newline to move past the progress indicator line
-    print("\n")
+    # Hot start runs
+    if num_runs > 1:
+        print("\nRunning Hot Starts (Second to last run).")
+        for i in range(num_runs - 1):
+            try:
+                with Timer() as t:
+                    # The PBF reader object is reused, benefiting from internal/OS caching
+                    hot_features_gdf = pbf_reader.convert_pbf_to_geodataframe(PBF_FILEPATH)
+                hot_start_times.append(t.interval)
+                print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+            except Exception as e:
+                print(f"\nHot run {i + 2}/{num_runs} failed. Error: {e}")
+        print("\n")  # Newline after progress indicator
 
     # After the loop, calculate and save results
     print("Benchmark run summary:")
-    print(f"Successful runs: {successful_runs}")
-    print(f"Failed runs: {failed_runs}")
+    # Process and save cold start result
+    if cold_start_time is not None:
+        print(f"Cold start time: {cold_start_time:.4f}s.")
+        num_features = len(last_successful_gdf)
 
-    if successful_runs > 0:
-        average_time = sum(execution_times) / len(execution_times)
-        print(f"Average execution time: {average_time:.4f}s.")
+        # Calculate size (only once)
+        output_filename = f"{place_name_clean.lower()}_buildings_duckdb.geoparquet"
+        output_path = PROCESSED_DATA_DIR / output_filename
+        PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        last_successful_gdf.to_parquet(output_path)
+        output_size_bytes = output_path.stat().st_size
+        output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
-        output_size_mb = 'N/A'
-        if last_successful_gdf is not None:
-            num_features = len(last_successful_gdf)  # Get the number of features
-            output_filename = f"{place_name_clean.lower()}_buildings_duckdb.geoparquet"
-            output_path = PROCESSED_DATA_DIR / output_filename
-            PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-            print(f"Saving output file {output_filename} to calculate its size.")
-            last_successful_gdf.to_parquet(output_path)
-
-            output_size_bytes = output_path.stat().st_size
-            output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
-            print(f"Output file size: {output_size_mb} MB.")
-            print(f"Number of features found: {num_features}")
-
-        # Save the aggregated result
-        result_data = {
+        # Save cold start result
+        cold_result = {
             'use_case': '1&2. Ingestion & Filtering (OSM Data)',
             'technology': 'DuckDB + Quackosm',
             'operation_description': f'Extract {place_name_clean} buildings from PBF',
             'test_dataset': PBF_FILEPATH.name,
-            'execution_time_s': average_time,
-            'num_runs': successful_runs,
+            'execution_time_s': cold_start_time,
+            'num_runs': 1,
             'output_size_mb': output_size_mb,
-            'notes': f'Found {num_features} buildings. Average time over {successful_runs} successful runs for {place_name_clean}.'
+            'notes': f'Found {num_features} buildings for {place_name_clean}. Cold start (first run).'
         }
-        save_results(result_data)
-        print("Aggregated results saved successfully.")
+        save_results(cold_result)
+        print(f"Cold start result saved. Features: {num_features}, Size: {output_size_mb} MB.")
+
+    # Process and save hot start results
+    if len(hot_start_times) > 0:
+        average_hot_time = sum(hot_start_times) / len(hot_start_times)
+        print(f"Average hot start time: {average_hot_time:.4f}s over {len(hot_start_times)} runs.")
+
+        # Save hot start average result
+        hot_result = {
+            'use_case': '1&2. Ingestion & Filtering (OSM Data)',
+            'technology': 'DuckDB + Quackosm',
+            'operation_description': f'Extract {place_name_clean} buildings from PBF',
+            'test_dataset': PBF_FILEPATH.name,
+            'execution_time_s': average_hot_time,
+            'num_runs': len(hot_start_times),
+            'output_size_mb': output_size_mb,  # Reuse size from cold start
+            'notes': f'Found {num_features} buildings for {place_name_clean}. Average of {len(hot_start_times)} hot cache runs.'
+        }
+        save_results(hot_result)
+        print("Hot start average result saved.")
     else:
         print("No successful runs to save.")
 
