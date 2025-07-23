@@ -17,7 +17,7 @@ def save_results(result_data, results_file='benchmark_results.csv'):
     Saves a dictionary of benchmark results to a specified CSV file.
     """
     # Define the output path relative to this utility script
-    results_dir = Path(__file__).resolve().parent / 'results'
+    results_dir = Path(__file__).resolve().parent.parent / 'results'
     results_dir.mkdir(parents=True, exist_ok=True)
     results_filepath = results_dir / results_file
 

@@ -1,7 +1,0 @@
-use_case,technology,operation_description,test_dataset,avg_execution_time_s,num_runs,output_size_mb,notes
-1&2. Ingestion & Filtering (OSM Data),DuckDB + Quackosm,Extract Milan buildings from PBF,italy-latest.osm.pbf,1.339344699999998,1,6.9690,Found 62133 buildings for Milan. Cold start (first run).
-1&2. Ingestion & Filtering (OSM Data),DuckDB + Quackosm,Extract Milan buildings from PBF,italy-latest.osm.pbf,0.21975506565656538,99,6.9690,Found 62133 buildings for Milan. Average of 99 hot cache runs.
-1&2. Filtering (OSM Data),PostGIS,Extract Milan buildings from DB,italy-latest.osm.pbf,1.0973968999999215,1,N/A,Found 62127 buildings. Cold start query time.
-1&2. Filtering (OSM Data),PostGIS,Extract Milan buildings from DB,italy-latest.osm.pbf,0.3959301909090718,99,N/A,Found 62127 buildings. Average of 99 hot cache query times.
-1&2. Ingestion & Filtering (OSM Data),PyOsmium + GeoPandas,Extract Milan buildings from PBF,lombardy-latest.osm.pbf,347.8804521999991,1,7.6140,Found 62075 buildings. Cold start (first run).
-1&2. Ingestion & Filtering (OSM Data),PyOsmium + GeoPandas,Extract Milan buildings from PBF,lombardy-latest.osm.pbf,348.15301119999987,6,7.6140,Found 62075 buildings. Average of 6 hot cache runs.
