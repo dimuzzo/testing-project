@@ -8,7 +8,7 @@ How to enable the PostGIS extension in your Database:
 
 4. Use the command 'CREATE EXTENSION postgis;'.
 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Commands to use osm2pgsql for importing PBF (OSM) data into PostGIS DBs via your CMD/Powershell:
 
@@ -23,7 +23,7 @@ Commands to use osm2pgsql for importing PBF (OSM) data into PostGIS DBs via your
     .\osm2pgsql.exe --create -d osm_benchmark_db -U postgres -W --slim -C 2048 --flat-nodes C:\osm_temp\nodes.bin "...\testing-project\UseCasesManagement\data\raw\italy-latest.osm.pbf"
     }'
 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 How to retrieve the Database size via Postgresql:
 
@@ -35,7 +35,7 @@ How to retrieve the Database size via Postgresql:
 
 4. Use the command 'SELECT pg_size_pretty( pg_database_size('osm_benchmark_db') );'.
 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Commands to use shp2pgsql for importing pure vector data into PostGIS DBs via your CMD/Powershell:
 
@@ -46,7 +46,7 @@ Commands to use shp2pgsql for importing pure vector data into PostGIS DBs via yo
     shp2pgsql -s 4326 -I -W "latin1" "...\testing-project\UseCasesManagement\data\raw\comuni_istat\Com01012025_WGS84.shp" public.comuni_istat | psql -d osm_benchmark_db -U postgres
     }'
 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via your CMD/Powershell:
 
@@ -65,4 +65,32 @@ Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via
     raster2pgsql -s 32632 -I -F "...\testing-projectUseCasesManagement\data\raw\raster\w49540_s10.tif" public.dem_table | psql -d osm_benchmark_db -U postgres
     }'
 
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via your Anaconda Powershell (+ TIF files merging):
+
+1. Open pgAdmin 4.
+
+2. Connect with the server that has the Database 'osm_benchmark_db'.
+
+3. Right-click on the Database and select Query Tool.
+
+4. Use the command 'CREATE EXTENSION postgis_raster;'.
+
+5. Open your Anaconda Powershell at that specific path.
+
+6. Install GDAL with the command 'conda install -c conda-forge gdal'.
+
+7. Merge the files (that you should already have installed from GHS-POP Copernicus) with the command
+    'python PathOfYourMiniconda3Environment\gdal_merge.py -o GHS_POP_ITALY_100m.tif GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif
+    GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif'
+
+8. Put the TIF file created in the correct directory (in this case: ...\testing-project\UseCasesManagement\data\raw\raster\).
+
+9. Use this specific command:
+'Measure-Command {
+    raster2pgsql -s 54009 -I -F -t 256x256 "...\testing-project\UseCasesManagement\data\raw\raster\GHS_POP_ITALY_100m.tif" public.ghs_population | Out-File -FilePath C:\osm_temp\import_raster.sql -Encoding ascii;
+    psql -d osm_benchmark_db -U postgres -f C:\osm_temp\import_raster.sql
+}'
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
