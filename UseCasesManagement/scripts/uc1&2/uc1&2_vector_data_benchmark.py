@@ -3,7 +3,6 @@ import duckdb
 import psycopg2
 from pathlib import Path
 import sys
-import os
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -12,44 +11,87 @@ from benchmark_utils import Timer, save_results
 # Global Path Setup
 CURRENT_SCRIPT_PATH = Path(__file__).resolve()
 WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent.parent
-SHAPEFILE_PATH = WORKING_ROOT / 'data' / 'raw' / 'comuni_istat' / 'Com01012025_WGS84.shp'
+RAW_DATA_DIR = WORKING_ROOT / 'data' / 'raw'
 PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
+SHAPEFILE_INPUT = RAW_DATA_DIR / 'comuni_istat' / 'Com01012025_WGS84.shp'
 
-def run_duckdb_benchmark():
+# Ensure the output directory exists
+PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+def benchmark_duckdb_vector(shapefile_path, num_runs=100):
+    """
+    Runs Ingestion and Filtering benchmarks for DuckDB on a pure vector file.
+    """
+    print("\nTesting DuckDB Spatial ingestion & filtering for Pure Vector Data.")
+
     con = duckdb.connect(database=':memory:')
     con.execute("INSTALL spatial; LOAD spatial;")
 
-    # Use Case 1: Ingestion
-    print("\nTesting DuckDB Spatial ingestion for vector data.")
-    # The query reads the Shapefile from disk and loads it into a new table in a single step.
-    ingestion_query = f"CREATE OR REPLACE TABLE comuni AS SELECT * FROM ST_Read('{str(SHAPEFILE_PATH).replace('\\', '/')}');"
-    with Timer() as t:
-        con.execute(ingestion_query)
-    feature_count = con.execute("SELECT COUNT(*) FROM comuni;").fetchone()[0]
-    print(f"DuckDB loaded {feature_count} features in {t.interval:.4f}s.")
+    print("\nRunning DuckDB Spatial Ingestion (ST_Read).")
 
+    # Cold start run
+    with Timer() as t:
+        con.execute(f"CREATE OR REPLACE TABLE comuni AS SELECT * FROM ST_Read('{str(shapefile_path).replace('\\', '/')}');")
+    cold_start_time = t.interval
+
+    # Get feature count
+    num_features = con.execute("SELECT COUNT(*) FROM comuni;").fetchone()[0]
+    print(f"Cold start completed in {cold_start_time:.4f}s. Found {num_features} features.")
+
+    # Save cold start result
     save_results({
         'use_case': '1. Ingestion (Vector Data)',
         'technology': 'DuckDB Spatial',
-        'operation_description': 'Load Shapefile using ST_Read',
-        'test_dataset': SHAPEFILE_PATH.name,
-        'execution_time_s': t.interval,
+        'operation_description': 'Read Shapefile using ST_Read',
+        'test_dataset': shapefile_path.name,
+        'execution_time_s': cold_start_time,
+        'num_runs': 1,
         'output_size_mb': 'N/A',
-        'notes': f'Loaded {feature_count} polygons into in-memory table.'
+        'notes': f'Found {num_features} features. Cold start (first run).'
     })
 
-    # Use Case 2: Filtering
-    print("\nTesting DuckDB Spatial filtering for vector data.")
+    # Hot start runs
+    hot_ingestion_times = []
+    if num_runs > 1:
+        for i in range(num_runs - 1):
+            try:
+                with Timer() as t:
+                    con.execute(
+                        f"CREATE OR REPLACE TABLE comuni AS SELECT * FROM ST_Read('{str(shapefile_path).replace('\\', '/')}');")
+                hot_ingestion_times.append(t.interval)
+                print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+            except Exception as e:
+                print(f"\nHot run {i + 2}/{num_runs} failed. Error: {e}")
+        print("\n")  # Newline after progress indicator
+
+        # Save hot start results
+        avg_hot_time = sum(hot_ingestion_times) / len(hot_ingestion_times)
+        save_results({
+            'use_case': '1. Ingestion (Vector Data)',
+            'technology': 'DuckDB Spatial',
+            'operation_description': 'Read Shapefile using ST_Read',
+            'test_dataset': shapefile_path.name,
+            'execution_time_s': avg_hot_time,
+            'num_runs': len(hot_ingestion_times),
+            'output_size_mb': 'N/A',
+            'notes': f'Found {num_features} features. Average of {len(hot_ingestion_times)} hot cache runs.'
+        })
+        print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_ingestion_times)} runs.")
+        print("Hot start average result saved.")
+
+    print("\nRunning DuckDB Spatial Filtering (SQL Query).")
+
+    # Cold start run
     # The geometry must be converted to Well-Known Binary (WKB) format to measure the output size.
     # This is a critical step for interoperability, allowing other libraries
     # like GeoPandas to correctly parse the geometry from the resulting DataFrame.
     filtering_query = "SELECT *, ST_AsWKB(geom) as geom_wkb FROM comuni WHERE COD_REG = 1;"
     with Timer() as t:
         result_df = con.execute(filtering_query).df()
-    print(f"DuckDB filtered to {len(result_df)} features in {t.interval:.4f}s.")
+    cold_start_time = t.interval
+    num_filtered_features = len(result_df)
+    print(f"Cold start completed in {cold_start_time:.4f}s. Filtered to {num_filtered_features} features.")
 
-    output_path = PROCESSED_DATA_DIR / 'comuni_piemonte_duckdb.geoparquet'
-    os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
     # Reconstruct the GeoDataFrame from the Pandas DataFrame.
     # Start by dropping temporary geometry columns ('geom' and 'geom_wkb').
     # The gpd.GeoSeries.from_wkb function is the key to this process,
@@ -59,116 +101,241 @@ def run_duckdb_benchmark():
         geometry=gpd.GeoSeries.from_wkb(result_df['geom_wkb'].apply(bytes)),
         crs="EPSG:4326"
     )
+    output_filename = 'comuni_filtered_duckdb.geoparquet'
+    output_path = PROCESSED_DATA_DIR / 'duckdb_generated' / output_filename
     result_gdf.to_parquet(output_path)
     output_size_bytes = output_path.stat().st_size
     output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
+    # Save cold start result
     save_results({
         'use_case': '2. Filtering (Vector Data)',
         'technology': 'DuckDB Spatial',
-        'operation_description': 'Filter municipalities by region code from memory',
-        'test_dataset': SHAPEFILE_PATH.name,
-        'execution_time_s': t.interval,
+        'operation_description': 'Filter table by attribute',
+        'test_dataset': shapefile_path.name,
+        'execution_time_s': cold_start_time,
+        'num_runs': 1,
         'output_size_mb': output_size_mb,
-        'notes': f'Filtered for cod_reg == 1.'
+        'notes': f'Filtered to {num_filtered_features} features. Cold start (first run).'
     })
 
-    con.close()
+    # Hot start runs
+    hot_filtering_times = []
+    if num_runs > 1:
+        for i in range(num_runs - 1):
+            try:
+                with Timer() as t:
+                    _ = con.execute(filtering_query).df()
+                hot_filtering_times.append(t.interval)
+                print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+            except Exception as e:
+                print(f"\nHot run {i + 2}/{num_runs} failed. Error: {e}")
+        print("\n")  # Newline after progress indicator
 
-def run_postgis_benchmark():
-    # This test assumes the 'comuni_istat' table was preloaded using the shp2pgsql tool.
-    # The benchmark measures only the query execution time, not the initial ingestion cost.
+        # Save hot start results
+        avg_hot_time = sum(hot_filtering_times) / len(hot_filtering_times)
+        save_results({
+            'use_case': '2. Filtering (Vector Data)',
+            'technology': 'DuckDB Spatial',
+            'operation_description': 'Filter table by attribute',
+            'test_dataset': shapefile_path.name,
+            'execution_time_s': avg_hot_time,
+            'num_runs': len(hot_filtering_times),
+            'output_size_mb': output_size_mb,
+            'notes': f'Filtered to {num_filtered_features} features. Average of {len(hot_filtering_times)} hot cache runs.'
+        })
+        print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_filtering_times)} runs.")
+        print("Hot start average result saved.")
+
+def benchmark_postgis_vector(num_runs=100):
+    """
+    Runs Filtering benchmarks for PostGIS on a pure vector table.
+    NOTE: Ingestion must be performed and timed manually as a one-time setup cost,
+    using shp2pgsql tool.
+    """
+    print("\nTesting PostGIS filtering for Pure Vector Data.")
+
     conn = None
     try:
         conn = psycopg2.connect(dbname='osm_benchmark_db', user='postgres', password='postgres', host='localhost', port='5432')
-        # Use Case 2: Filtering
-        print("\nTesting PostGIS filtering for vector data.")
+        print("\nRunning PostGIS Filtering (SQL Query).")
+
         # A standard SQL attribute filter. Performance depends on the PostgreSQL query optimizer,
         # table statistics and the presence of a database index on the 'cod_reg' column.
         query = "SELECT * FROM comuni_istat WHERE cod_reg = 1;"
+
+        # Cold start run
         with Timer() as t:
             cursor = conn.cursor()
             cursor.execute(query)
-            # The fetchall() command retrieves all query results from the database server
-            # to the Python client. The measured time therefore includes network latency.
             results = cursor.fetchall()
             cursor.close()
+        cold_start_time = t.interval
+        num_features = len(results)
+        print(f"Cold start completed in {cold_start_time:.4f}s. Found {num_features} features.")
 
-        print(f"PostGIS filtered to {len(results)} features in {t.interval:.4f}s.")
+        # For this test, 'output_size_mb' is not directly applicable
+        # as we are using an external DataBase on Postgresql.
+
+        # Save cold start result
         save_results({
             'use_case': '2. Filtering (Vector Data)',
             'technology': 'PostGIS',
-            'operation_description': 'Filter municipalities by region code from DB table',
-            'test_dataset': SHAPEFILE_PATH.name,
-            'execution_time_s': t.interval,
+            'operation_description': 'Filter table by attribute',
+            'test_dataset': 'comuni_istat',
+            'execution_time_s': cold_start_time,
+            'num_runs': 1,
             'output_size_mb': 'N/A',
-            'notes': 'Query Time only. Data should be pre-loaded with shp2pgsql.'
+            'notes': f'Found {num_features} features. Cold start query time.'
         })
 
-    except psycopg2.OperationalError as e:
-        print("SKIPPING PostGIS test: Could not connect to database. Please check connection details and ensure the server is running.")
-        print(f"Error: {e}.")
-    except psycopg2.errors.UndefinedTable:
-        print(f"SKIPPING PostGIS test: Table 'comuni_istat' not found.")
-        print(f"Please run the 'shp2pgsql' command first to import the data.")
+        # Hot start runs
+        hot_filtering_times = []
+        if num_runs > 1:
+            for i in range(num_runs - 1):
+                with Timer() as t:
+                    cursor = conn.cursor()
+                    cursor.execute(query)
+                    _ = cursor.fetchall()
+                    cursor.close()
+                hot_filtering_times.append(t.interval)
+                print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+            print("\n")
+
+            # Save hot start results
+            avg_hot_time = sum(hot_filtering_times) / len(hot_filtering_times)
+            save_results({
+                'use_case': '2. Filtering (Vector Data)',
+                'technology': 'PostGIS',
+                'operation_description': 'Filter table by attribute',
+                'test_dataset': 'comuni_istat',
+                'execution_time_s': avg_hot_time,
+                'num_runs': len(hot_filtering_times),
+                'output_size_mb': 'N/A',
+                'notes': f'Found {num_features} features. Average of {len(hot_filtering_times)} hot cache query times.'
+            })
+            print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_filtering_times)} runs.")
+
     except Exception as e:
         print(f"An error occurred during PostGIS test: {e}.")
     finally:
         if conn:
             conn.close()
 
-def run_geopandas_benchmark():
-    # Use Case 1: Ingestion
-    print("\nTesting GeoPandas ingestion for vector data.")
-    with Timer() as t:
-        # gpd.read_file is the standard method for loading any vector file
-        # format supported by GDAL(Geospatial Data Abstraction Library)/Fiona directly into an in-memory GeoDataFrame.
-        gdf = gpd.read_file(SHAPEFILE_PATH)
-    print(f"GeoPandas loaded {len(gdf)} features in {t.interval:.4f}s.")
+def benchmark_geopandas_vector(shapefile_path, num_runs=100):
+    """
+    Runs Ingestion and Filtering benchmarks for GeoPandas on a pure vector file.
+    """
+    print("\nTesting GeoPandas ingestion & filtering for Pure Vector Data.")
 
+    print("\nRunning GeoPandas Ingestion (gpd.read_file).")
+
+    # Cold start run
+    with Timer() as t:
+        gdf = gpd.read_file(shapefile_path)
+    cold_start_time = t.interval
+    num_features = len(gdf)
+    print(f"Cold start completed in {cold_start_time:.4f}s. Found {num_features} features.")
+
+    # Save cold start result
     save_results({
         'use_case': '1. Ingestion (Vector Data)',
         'technology': 'GeoPandas',
-        'operation_description': 'Load Shapefile into GeoDataFrame',
-        'test_dataset': SHAPEFILE_PATH.name,
-        'execution_time_s': t.interval,
+        'operation_description': 'Read Shapefile into GeoDataFrame',
+        'test_dataset': shapefile_path.name,
+        'execution_time_s': cold_start_time,
+        'num_runs': 1,
         'output_size_mb': 'N/A',
-        'notes': f'Loaded {len(gdf)} polygons into memory.'
+        'notes': f'Found {num_features} features. Cold start (first run).'
     })
 
-    # Use Case 2: Filtering
-    print("\nTesting GeoPandas filtering for vector data.")
-    with Timer() as t:
-        # Standard Pandas boolean indexing operation.
-        # It is highly optimized for in-memory data, which explains its
-        # extremely fast performance compared to database queries.
-        piedmont_gdf = gdf[gdf['COD_REG'] == 1]
-    print(f"GeoPandas filtered to {len(piedmont_gdf)} features in {t.interval:.4f}s.")
+    # Hot start runs
+    hot_ingestion_times = []
+    if num_runs > 1:
+        for i in range(num_runs - 1):
+            with Timer() as t:
+                _ = gpd.read_file(shapefile_path)
+            hot_ingestion_times.append(t.interval)
+            print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+        print("\n")
 
-    output_path = PROCESSED_DATA_DIR / 'comuni_piemonte_geopandas.geoparquet'
-    os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
-    piedmont_gdf.to_parquet(output_path)
+        # Save hot start results
+        avg_hot_time = sum(hot_ingestion_times) / len(hot_ingestion_times)
+        save_results({
+            'use_case': '1. Ingestion (Vector Data)',
+            'technology': 'GeoPandas',
+            'operation_description': 'Read Shapefile into GeoDataFrame',
+            'test_dataset': shapefile_path.name,
+            'execution_time_s': avg_hot_time,
+            'num_runs': len(hot_ingestion_times),
+            'output_size_mb': 'N/A',
+            'notes': f'Found {num_features} features. Average of {len(hot_ingestion_times)} hot cache runs.'
+        })
+        print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_ingestion_times)} runs.")
+
+    print("\nRunning GeoPandas Filtering (in-memory).")
+    # Load data once for filtering tests
+    gdf = gpd.read_file(shapefile_path)
+
+    # Cold start run
+    with Timer() as t:
+        filtered_gdf = gdf[gdf['COD_REG'] == 1]
+    cold_start_time = t.interval
+    num_filtered_features = len(filtered_gdf)
+    print(f"Cold start completed in {cold_start_time:.4f}s. Filtered to {num_filtered_features} features.")
+
+    # Save file to disk and measure its size
+    output_filename = 'comuni_filtered_geopandas.geoparquet'
+    output_path = PROCESSED_DATA_DIR / 'geopandas_generated' / output_filename
+    filtered_gdf.to_parquet(output_path)
     output_size_bytes = output_path.stat().st_size
     output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
+    # Save cold start result
     save_results({
         'use_case': '2. Filtering (Vector Data)',
         'technology': 'GeoPandas',
-        'operation_description': 'Filter municipalities by region code from memory',
-        'test_dataset': SHAPEFILE_PATH.name,
-        'execution_time_s': t.interval,
+        'operation_description': 'Filter GeoDataFrame by attribute',
+        'test_dataset': shapefile_path.name,
+        'execution_time_s': cold_start_time,
+        'num_runs': 1,
         'output_size_mb': output_size_mb,
-        'notes': f'Filtered for cod_reg == 1.'
+        'notes': f'Filtered to {num_filtered_features} features. Cold start (first run).'
     })
 
-if __name__ == '__main__':
-    print(f"Running Vector Data Benchmark.")
-    print(f"Using input file: {SHAPEFILE_PATH.name}.")
+    # Hot start runs
+    hot_filtering_times = []
+    if num_runs > 1:
+        for i in range(num_runs - 1):
+            with Timer() as t:
+                _ = gdf[gdf['COD_REG'] == 1]
+            hot_filtering_times.append(t.interval)
+            print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+        print("\n")
 
-    if not SHAPEFILE_PATH.exists():
-        print(f"\nERROR: Input file not found at {SHAPEFILE_PATH.name}.")
-        print("Please download the correct ISTAT administrative boundaries and place them in the correct folder.")
+        # Save hot start results
+        avg_hot_time = sum(hot_filtering_times) / len(hot_filtering_times)
+        save_results({
+            'use_case': '2. Filtering (Vector Data)',
+            'technology': 'GeoPandas',
+            'operation_description': 'Filter GeoDataFrame by attribute',
+            'test_dataset': shapefile_path.name,
+            'execution_time_s': avg_hot_time,
+            'num_runs': len(hot_filtering_times),
+            'output_size_mb': output_size_mb,
+            'notes': f'Filtered to {num_filtered_features} features. Average of {len(hot_filtering_times)} hot cache runs.'
+        })
+        print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_filtering_times)} runs.")
+
+if __name__ == '__main__':
+    NUMBER_OF_RUNS = 100
+
+    if not SHAPEFILE_INPUT.exists():
+        print(f"ERROR: Shapefile not found at {SHAPEFILE_INPUT}. Aborting the tests.")
     else:
-        run_duckdb_benchmark()
-        run_postgis_benchmark()
-        run_geopandas_benchmark()
+        # Run benchmarks for all technologies
+        benchmark_duckdb_vector(SHAPEFILE_INPUT, NUMBER_OF_RUNS)
+        benchmark_postgis_vector(NUMBER_OF_RUNS)
+        benchmark_geopandas_vector(SHAPEFILE_INPUT, NUMBER_OF_RUNS)
+
+        print("\nAll vector data benchmarks are complete.")
