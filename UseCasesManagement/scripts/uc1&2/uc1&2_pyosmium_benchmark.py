@@ -171,7 +171,7 @@ def run_pyosmium_ingestion_and_filtering(place_name, pbf_filepath, num_runs=100)
         if cold_start_time is not None:
             num_features = len(last_successful_gdf)
             output_filename = f"{place_name_clean.lower()}_buildings_pyosmium.geoparquet"
-            output_path = PROCESSED_DATA_DIR / output_filename
+            output_path = PROCESSED_DATA_DIR / 'geopandas_generated' / output_filename
             PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
             last_successful_gdf.to_parquet(output_path)
             # Get file size

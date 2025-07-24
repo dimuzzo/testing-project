@@ -78,7 +78,7 @@ def run_duckdb_ingestion_and_filtering(place_name, num_runs=100):
 
         # Calculate size (only once)
         output_filename = f"{place_name_clean.lower()}_buildings_duckdb.geoparquet"
-        output_path = PROCESSED_DATA_DIR / output_filename
+        output_path = PROCESSED_DATA_DIR / 'duckdb_generated' / output_filename
         PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
         last_successful_gdf.to_parquet(output_path)
         output_size_bytes = output_path.stat().st_size
