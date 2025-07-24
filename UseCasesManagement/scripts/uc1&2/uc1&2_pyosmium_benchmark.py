@@ -212,7 +212,7 @@ def run_pyosmium_ingestion_and_filtering(place_name, pbf_filepath, num_runs=100)
 
 if __name__ == '__main__':
     PLACE_TO_BENCHMARK = "Milan, Italy"
-    NUMBER_OF_RUNS = 7 # The number of runs will be changed to 100 once the time is enough to run them all
+    NUMBER_OF_RUNS = 50 # The number of runs will be changed to 100 once the time is enough to run them all
     PBF_FILEPATH = RAW_DATA_DIR / 'lombardy-latest.osm.pbf'
 
     run_pyosmium_ingestion_and_filtering(place_name=PLACE_TO_BENCHMARK, pbf_filepath=PBF_FILEPATH, num_runs=NUMBER_OF_RUNS)
