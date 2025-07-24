@@ -48,7 +48,7 @@ Commands to use shp2pgsql for importing pure vector data into PostGIS DBs via yo
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via your CMD/Powershell:
+Commands to use raster2pgsql for importing raster data into PostGIS DBs via your CMD/Powershell:
 
 1. Open pgAdmin 4.
 
@@ -67,7 +67,7 @@ Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Commands to use raster2pgsql for importing pure vector data into PostGIS DBs via your Anaconda Powershell (+ TIF files merging):
+Commands to use raster2pgsql for importing raster data into PostGIS DBs via your Anaconda Powershell (+ TIF files merging):
 
 1. Open pgAdmin 4.
 
