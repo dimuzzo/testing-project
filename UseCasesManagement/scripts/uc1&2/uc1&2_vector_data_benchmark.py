@@ -18,7 +18,7 @@ SHAPEFILE_INPUT = RAW_DATA_DIR / 'comuni_istat' / 'Com01012025_WGS84.shp'
 # Ensure the output directory exists
 PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-def benchmark_duckdb_vector(shapefile_path, num_runs=100):
+def run_duckdb_vector_benchmark(shapefile_path, num_runs=100):
     """
     Runs Ingestion and Filtering benchmarks for DuckDB on a pure vector file.
     """
@@ -38,7 +38,7 @@ def benchmark_duckdb_vector(shapefile_path, num_runs=100):
     num_features = con.execute("SELECT COUNT(*) FROM comuni;").fetchone()[0]
     print(f"Cold start completed in {cold_start_time:.4f}s. Found {num_features} features.")
 
-    # Save cold start result
+    # Save cold start results
     save_results({
         'use_case': '1. Ingestion (Vector Data)',
         'technology': 'DuckDB Spatial',
@@ -107,7 +107,7 @@ def benchmark_duckdb_vector(shapefile_path, num_runs=100):
     output_size_bytes = output_path.stat().st_size
     output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
-    # Save cold start result
+    # Save cold start results
     save_results({
         'use_case': '2. Filtering (Vector Data)',
         'technology': 'DuckDB Spatial',
@@ -147,7 +147,7 @@ def benchmark_duckdb_vector(shapefile_path, num_runs=100):
         print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_filtering_times)} runs.")
         print("Hot start average result saved.")
 
-def benchmark_postgis_vector(num_runs=100):
+def run_postgis_vector_benchmark(num_runs=100):
     """
     Runs Filtering benchmarks for PostGIS on a pure vector table.
     NOTE: Ingestion must be performed and timed manually as a one-time setup cost,
@@ -177,7 +177,7 @@ def benchmark_postgis_vector(num_runs=100):
         # For this test, 'output_size_mb' is not directly applicable
         # as we are using an external DataBase on Postgresql.
 
-        # Save cold start result
+        # Save cold start results
         save_results({
             'use_case': '2. Filtering (Vector Data)',
             'technology': 'PostGIS',
@@ -222,7 +222,7 @@ def benchmark_postgis_vector(num_runs=100):
         if conn:
             conn.close()
 
-def benchmark_geopandas_vector(shapefile_path, num_runs=100):
+def run_geopandas_vector_benchmark(shapefile_path, num_runs=100):
     """
     Runs Ingestion and Filtering benchmarks for GeoPandas on a pure vector file.
     """
@@ -237,7 +237,7 @@ def benchmark_geopandas_vector(shapefile_path, num_runs=100):
     num_features = len(gdf)
     print(f"Cold start completed in {cold_start_time:.4f}s. Found {num_features} features.")
 
-    # Save cold start result
+    # Save cold start results
     save_results({
         'use_case': '1. Ingestion (Vector Data)',
         'technology': 'GeoPandas',
@@ -291,7 +291,7 @@ def benchmark_geopandas_vector(shapefile_path, num_runs=100):
     output_size_bytes = output_path.stat().st_size
     output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
-    # Save cold start result
+    # Save cold start results
     save_results({
         'use_case': '2. Filtering (Vector Data)',
         'technology': 'GeoPandas',
@@ -334,8 +334,8 @@ if __name__ == '__main__':
         print(f"ERROR: Shapefile not found at {SHAPEFILE_INPUT}. Aborting the tests.")
     else:
         # Run benchmarks for all technologies
-        benchmark_duckdb_vector(SHAPEFILE_INPUT, NUMBER_OF_RUNS)
-        benchmark_postgis_vector(NUMBER_OF_RUNS)
-        benchmark_geopandas_vector(SHAPEFILE_INPUT, NUMBER_OF_RUNS)
+        run_duckdb_vector_benchmark(SHAPEFILE_INPUT, NUMBER_OF_RUNS)
+        run_postgis_vector_benchmark(NUMBER_OF_RUNS)
+        run_geopandas_vector_benchmark(SHAPEFILE_INPUT, NUMBER_OF_RUNS)
 
         print("\nAll vector data benchmarks are complete.")
