@@ -5,3 +5,13 @@ use_case,technology,operation_description,test_dataset,avg_execution_time_s,num_
 1&2. Filtering (OSM Data),PostGIS,Extract Milan buildings from DB,italy-latest.osm.pbf,0.3959301909090718,99,N/A,Found 62127 buildings. Average of 99 hot cache query times.
 1&2. Ingestion & Filtering (OSM Data),PyOsmium + GeoPandas,Extract Milan buildings from PBF,lombardy-latest.osm.pbf,358.92635859999996,1,7.6140,Found 62075 buildings. Cold start (first run).
 1&2. Ingestion & Filtering (OSM Data),PyOsmium + GeoPandas,Extract Milan buildings from PBF,lombardy-latest.osm.pbf,360.09787776326533,49,7.6140,Found 62075 buildings. Average of 49 hot cache runs.
+1. Ingestion (Vector Data),DuckDB Spatial,Read Shapefile using ST_Read,Com01012025_WGS84.shp,0.4399604000027466,1,N/A,Found 7896 features. Cold start (first run).
+1. Ingestion (Vector Data),DuckDB Spatial,Read Shapefile using ST_Read,Com01012025_WGS84.shp,0.32760993131303234,99,N/A,Found 7896 features. Average of 99 hot cache runs.
+2. Filtering (Vector Data),DuckDB Spatial,Filter table by attribute,Com01012025_WGS84.shp,0.01958530000047176,1,12.5688,Filtered to 1180 features. Cold start (first run).
+2. Filtering (Vector Data),DuckDB Spatial,Filter table by attribute,Com01012025_WGS84.shp,0.018707774747459976,99,12.5688,Filtered to 1180 features. Average of 99 hot cache runs.
+2. Filtering (Vector Data),PostGIS,Filter table by attribute,comuni_istat,0.21856140000090818,1,N/A,Found 1180 features. Cold start query time.
+2. Filtering (Vector Data),PostGIS,Filter table by attribute,comuni_istat,0.07480974040376939,99,N/A,Found 1180 features. Average of 99 hot cache query times.
+1. Ingestion (Vector Data),GeoPandas,Read Shapefile into GeoDataFrame,Com01012025_WGS84.shp,0.8335332000024209,1,N/A,Found 7896 features. Cold start (first run).
+1. Ingestion (Vector Data),GeoPandas,Read Shapefile into GeoDataFrame,Com01012025_WGS84.shp,0.3400899656564544,99,N/A,Found 7896 features. Average of 99 hot cache runs.
+2. Filtering (Vector Data),GeoPandas,Filter GeoDataFrame by attribute,Com01012025_WGS84.shp,0.0009666000005381647,1,12.5801,Filtered to 1180 features. Cold start (first run).
+2. Filtering (Vector Data),GeoPandas,Filter GeoDataFrame by attribute,Com01012025_WGS84.shp,0.0008789333333337746,99,12.5801,Filtered to 1180 features. Average of 99 hot cache runs.
