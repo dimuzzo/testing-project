@@ -1,6 +1,6 @@
 import rasterio
 
-raster_path = '.../testing-project/UseCasesManagement/data/raw/raster/w49540_s10.tif' # The complete path needs to be inserted to make it work, naturally
+raster_path = '.../testing-project/UseCasesManagement/data/raw/raster/GHS_POP_ITALY_100m.tif' # The complete path needs to be inserted to make it work, naturally
 
 try:
     with rasterio.open(raster_path) as src:
