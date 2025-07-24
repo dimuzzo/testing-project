@@ -1,12 +1,8 @@
-import rasterio
-import rasterio.mask
-# import geopandas as gpd, wrote just as a reminder of the technologies used in the project
+import rioxarray
 import osmnx as ox
-# import duckdb, wrote just as a reminder of the technologies used in the project
 import psycopg2
 from pathlib import Path
 import sys
-import os
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -15,159 +11,246 @@ from benchmark_utils import Timer, save_results
 # Global Path Setup
 CURRENT_SCRIPT_PATH = Path(__file__).resolve()
 WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent.parent
-RASTER_PATH = WORKING_ROOT / 'data' / 'raw' / 'raster' / 'w49540_s10.tif'
+RAW_DATA_DIR = WORKING_ROOT / 'data' / 'raw'
 PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
+# Update this filename to match the GHS-POP file you downloaded
+RASTER_INPUT = RAW_DATA_DIR / 'raster' / 'GHS_POP_ITALY_100m.tif'
 
-# This section serves as a placeholder to maintain a consistent benchmark structure.
-# It explicitly documents that DuckDB currently lacks native raster support,
-# so these tests are skipped. The results are recorded as 0.0 for completeness.
-def run_duckdb_benchmark():
-    # Use Case 1: Ingestion
-    print("\nTesting DuckDB Spatial ingestion for raster data.")
-    print("SKIPPING: DuckDB Spatial currently does not have native support for raster data.")
-    save_results({
+# Ensure the output directory exists
+PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def run_duckdb_raster_benchmark(raster_path, place_name):
+    """
+    Adds placeholder results for DuckDB, as it does not support raster data.
+    """
+    print("\nTesting DuckDB Spatial ingestion & filtering for Raster Data.")
+    print("SKIPPING: DuckDB Spatial currently does not support native raster operations.")
+
+    # Save a placeholder result for Ingestion
+    ingestion_result = {
         'use_case': '1. Ingestion (Raster Data)',
         'technology': 'DuckDB Spatial',
-        'operation_description': 'Load GeoTIFF file',
-        'test_dataset': RASTER_PATH.name,
-        'execution_time_s': 0.0,
-        'output_size_mb': 0.0,
-        'notes': 'Technology not supported for this data type.'
-    })
+        'operation_description': 'Open GeoTIFF file',
+        'test_dataset': raster_path.name,
+        'execution_time_s': 'N/A',
+        'num_runs': 1,
+        'output_size_mb': 'N/A',
+        'notes': 'Technology does not support native raster operations.'
+    }
+    save_results(ingestion_result)
 
-    # Use Case 2: Filtering
-    print("\nTesting DuckDB Spatial filtering for raster data.")
-    print("SKIPPING: DuckDB Spatial currently does not have native support for raster data.")
-    save_results({
+    # Save a placeholder result for Filtering
+    filtering_result = {
         'use_case': '2. Filtering (Raster Data)',
         'technology': 'DuckDB Spatial',
-        'operation_description': 'Clip raster with a vector polygon',
-        'test_dataset': RASTER_PATH.name,
-        'execution_time_s': 0.0,
-        'output_size_mb': 0.0,
-        'notes': 'Technology not supported for this data type.'
-    })
+        'operation_description': f'Clip raster to {place_name.split(",")[0]}',
+        'test_dataset': raster_path.name,
+        'execution_time_s': 'N/A',
+        'num_runs': 1,
+        'output_size_mb': 'N/A',
+        'notes': 'Technology does not support native raster operations.'
+    }
+    save_results(filtering_result)
 
-def run_postgis_benchmark():
-    # This test measures the performance of a server-side raster clipping operation.
-    # It assumes the 'dem_table' was pre-loaded with the raster2pgsql tool.
+def run_postgis_raster_benchmark(place_name, num_runs=100):
+    """
+    Runs Filtering benchmarks for PostGIS on a raster table.
+    NOTE: Ingestion must be performed and timed manually as a one-time setup cost,
+    using raster2pgsql tool.
+    """
+    print("\nTesting PostGIS filtering for Raster Data.")
+
     conn = None
     try:
-        conn = psycopg2.connect(dbname="osm_benchmark_db", user="postgres", password="postgres", host="localhost")
-        # Use Case 2: Filtering
-        print("\nTesting PostGIS filtering for raster data.")
-        area_gdf = ox.geocode_to_gdf("Turin, Italy")
-        # The vector polygon geometry is converted to Well-Known Text (WKT) format
-        # so it can be embedded directly into the SQL query string.
-        area_wkt = area_gdf.geometry.iloc[0].wkt
+        conn = psycopg2.connect(dbname='osm_benchmark_db', user='postgres', password='postgres', host='localhost', port='5432')
+        place_name_clean = place_name.split(',')[0]
+        boundary_gdf = ox.geocode_to_gdf(place_name)
+        area_wkt = boundary_gdf.geometry.iloc[0].wkt
 
-        # This query performs a complete server-side raster clipping.
-        # Here is a breakdown of the key PostGIS functions used:
-        # - ST_Intersects: Used in the WHERE clause as a fast spatial filter. It ensures that the
-        #   expensive clipping operation is only performed on raster tiles that actually overlap
-        #   with the Turin boundary, improving performance.
-        # - ST_Clip: This is the core function that cuts the raster `rast` using the provided
-        #   vector geometry.
-        # - ST_Transform(ST_SetSRID(ST_GeomFromText(...))): This nested block is crucial for
-        #   correctness. It takes the WKT of the Turin polygon, sets its native CRS to 4326,
-        #   and then transforms it on-the-fly to match the raster's CRS (ST_SRID(rast)).
-        # - ST_AsGDALRaster: After clipping, the resulting raster is converted back into a
-        #   standard format ('GTiff') that the Python client can receive and process.
         query = f"""
-        SELECT ST_AsGDALRaster(ST_Clip(rast, ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast)) ), 'GTiff') 
-        FROM public.dem_table
+        SELECT ST_AsGDALRaster(ST_Clip(rast, 
+            ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast))
+        ), 'GTiff') 
+        FROM public.ghs_population
         WHERE ST_Intersects(rast, ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast)));
         """
 
+        print(f"\nRunning PostGIS Filtering (clip to {place_name_clean}).")
+
+        # Cold start run
         with Timer() as t:
             cursor = conn.cursor()
             cursor.execute(query)
-            results = cursor.fetchall()
+            _ = cursor.fetchall()
             cursor.close()
+        cold_start_time = t.interval
+        print(f"Cold start completed in {cold_start_time:.4f}s.")
 
-        print(f"PostGIS raster clip completed in {t.interval:.4f}s.")
+        # Save cold start results
         save_results({
             'use_case': '2. Filtering (Raster Data)',
             'technology': 'PostGIS',
-            'operation_description': 'Clip raster with a vector polygon using ST_Clip',
-            'test_dataset': RASTER_PATH.name,
-            'execution_time_s': t.interval,
+            'operation_description': f'Clip raster to {place_name_clean}',
+            'test_dataset': 'ghs_population table',
+            'execution_time_s': cold_start_time,
+            'num_runs': 1,
             'output_size_mb': 'N/A',
-            'notes': 'Query Time only. Assumes data was pre-loaded.'
+            'notes': 'Cold start query time.'
         })
 
-    except psycopg2.OperationalError as e:
-        print("SKIPPING PostGIS test: Could not connect to database. Please check connection details and ensure the server is running.")
-        print(f"Error: {e}.")
-    except psycopg2.errors.UndefinedTable:
-        print(f"SKIPPING PostGIS test: Table 'dem_table' not found.")
-        print(f"Please run the 'raster2pgsql' command first to import the data.")
+        # Hot start runs
+        hot_filtering_times = []
+        if num_runs > 1:
+            for i in range(num_runs - 1):
+                with Timer() as t:
+                    cursor = conn.cursor()
+                    cursor.execute(query)
+                    _ = cursor.fetchall()
+                    cursor.close()
+                hot_filtering_times.append(t.interval)
+                print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+            print("\n")
+
+            # Save hot start results
+            avg_hot_time = sum(hot_filtering_times) / len(hot_filtering_times)
+            save_results({
+                'use_case': '2. Filtering (Raster Data)',
+                'technology': 'PostGIS',
+                'operation_description': f'Clip raster to {place_name_clean}',
+                'test_dataset': 'ghs_population table',
+                'execution_time_s': avg_hot_time,
+                'num_runs': len(hot_filtering_times),
+                'output_size_mb': 'N/A',
+                'notes': f'Average of {len(hot_filtering_times)} hot cache query times.'
+            })
+            print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_filtering_times)} runs.")
+
     except Exception as e:
-        print(f"An error occurred during PostGIS test: {e}.")
+        print(f"An error occurred during PostGIS test: {e}")
     finally:
         if conn:
             conn.close()
 
-def run_python_benchmark():
-    # Use Case 1: Ingestion
-    print("\nTesting Pure Python ingestion for raster data.")
-    with Timer() as t:
-        # rasterio.open() is a lazy-loading operation. It's extremely fast because
-        # it only reads the file's metadata (CRS, bounds, dimensions) and opens a
-        # file handle, without loading the large pixel array into RAM.
-        with rasterio.open(RASTER_PATH) as src:
-            notes = f'Opened file with {src.count} band(s) ({src.width}x{src.height}px).'
+def run_python_raster_benchmark(raster_path, place_name, num_runs=100):
+    """
+    Runs Ingestion and Filtering benchmarks for Python (rioxarray) on a raster file.
+    """
+    print("\nTesting Python (rioxarray) ingestion & filtering for Raster Data.")
 
+    print("\nRunning Python (rioxarray) Ingestion (rioxarray.open_rasterio).")
+
+    # Cold start run
+    with Timer() as t:
+        rds = rioxarray.open_rasterio(raster_path)
+        rds.close()  # Close the file handle
+    cold_start_time = t.interval
+    print(f"Cold start completed in {cold_start_time:.4f}s.")
+
+    # Save cold start results
     save_results({
         'use_case': '1. Ingestion (Raster Data)',
-        'technology': 'Python (Rasterio)',
-        'operation_description': 'Open GeoTIFF file handle',
-        'test_dataset': RASTER_PATH.name,
-        'execution_time_s': t.interval,
+        'technology': 'Python (rioxarray)',
+        'operation_description': 'Open GeoTIFF file',
+        'test_dataset': raster_path.name,
+        'execution_time_s': cold_start_time,
+        'num_runs': 1,
         'output_size_mb': 'N/A',
-        'notes': notes
+        'notes': 'Cold start (first run).'
     })
 
-    # Use Case 2: Filtering
-    print("\nTesting Python filtering for raster data.")
-    boundary_gdf = ox.geocode_to_gdf("Turin, Italy")
+    # Hot start runs
+    hot_ingestion_times = []
+    if num_runs > 1:
+        for i in range(num_runs - 1):
+            with Timer() as t:
+                rds = rioxarray.open_rasterio(raster_path)
+                rds.close()
+            hot_ingestion_times.append(t.interval)
+            print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+        print("\n")
 
+        # Save hot start results
+        avg_hot_time = sum(hot_ingestion_times) / len(hot_ingestion_times)
+        save_results({
+            'use_case': '1. Ingestion (Raster Data)',
+            'technology': 'Python (rioxarray)',
+            'operation_description': 'Open GeoTIFF file',
+            'test_dataset': raster_path.name,
+            'execution_time_s': avg_hot_time,
+            'num_runs': len(hot_ingestion_times),
+            'output_size_mb': 'N/A',
+            'notes': f'Average of {len(hot_ingestion_times)} hot cache runs.'
+        })
+        print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_ingestion_times)} runs.")
+
+    print(f"\nRunning Python (rioxarray) Filtering (clip to {place_name.split(',')[0]}).")
+
+    # Load data once for filtering tests
+    rds = rioxarray.open_rasterio(raster_path)
+    boundary_gdf = ox.geocode_to_gdf(place_name)
+
+    # Cold start run
     with Timer() as t:
-        with rasterio.open(RASTER_PATH) as src:
-            # The vector geometry's CRS must be transformed to match the raster's CRS.
-            # Failure to do this results in a "shapes do not overlap" error.
-            boundary_gdf = boundary_gdf.to_crs(src.crs)
-            # rasterio.mask.mask reads the necessary chunks of the raster from disk,
-            # applies the vector mask in memory and returns the resulting image array.
-            out_image, out_transform = rasterio.mask.mask(src, boundary_gdf.geometry, crop=True)
-            out_meta = src.meta
+        clipped_rds = rds.rio.clip(boundary_gdf.geometry, boundary_gdf.crs, drop=True)
+    cold_start_time = t.interval
+    print(f"Cold start completed in {cold_start_time:.4f}s.")
 
-    output_path = PROCESSED_DATA_DIR / 'turin_dem_clipped.tif'
-    os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
-    out_meta.update({"driver": "GTiff", "height": out_image.shape[1], "width": out_image.shape[2], "transform": out_transform})
-    with rasterio.open(output_path, "w", **out_meta) as dest:
-        dest.write(out_image)
+    # Save clipped file to measure size
+    output_path = PROCESSED_DATA_DIR / "geopandas_generated" / f"{place_name.split(',')[0].lower()}_pop.tif"
+    clipped_rds.rio.to_raster(output_path, tiled=True, compress='LZW')
+    output_size_bytes = output_path.stat().st_size
+    output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
-    output_size_mb = f"{(output_path.stat().st_size / (1024 * 1024)):.4f}"
-
+    # Save cold start results
     save_results({
         'use_case': '2. Filtering (Raster Data)',
-        'technology': 'Python (Rasterio)',
-        'operation_description': 'Clip raster with a vector polygon',
-        'test_dataset': RASTER_PATH.name,
-        'execution_time_s': t.interval,
+        'technology': 'Python (rioxarray)',
+        'operation_description': f'Clip raster to {place_name.split(",")[0]}',
+        'test_dataset': raster_path.name,
+        'execution_time_s': cold_start_time,
+        'num_runs': 1,
         'output_size_mb': output_size_mb,
-        'notes': 'Clipped DEM to Turin boundary.'
+        'notes': 'Cold start (first run).'
     })
 
-if __name__ == '__main__':
-    print(f"Running Raster Data Benchmark.")
-    print(f"Using input file: {RASTER_PATH.name}.")
+    # Hot start runs
+    hot_filtering_times = []
+    if num_runs > 1:
+        for i in range(num_runs - 1):
+            with Timer() as t:
+                _ = rds.rio.clip(boundary_gdf.geometry, boundary_gdf.crs, drop=True)
+            hot_filtering_times.append(t.interval)
+            print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
+        print("\n")
 
-    if not RASTER_PATH.exists():
-        print(f"\nERROR: Input file not found at {RASTER_PATH.name}.")
-        print("Please download the correct DEM Raster file and place it in the correct folder.")
+        # Save hot start results
+        avg_hot_time = sum(hot_filtering_times) / len(hot_filtering_times)
+        save_results({
+            'use_case': '2. Filtering (Raster Data)',
+            'technology': 'Python (rioxarray)',
+            'operation_description': f'Clip raster to {place_name.split(",")[0]}',
+            'test_dataset': raster_path.name,
+            'execution_time_s': avg_hot_time,
+            'num_runs': len(hot_filtering_times),
+            'output_size_mb': output_size_mb,
+            'notes': f'Average of {len(hot_filtering_times)} hot cache runs.'
+        })
+        print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_filtering_times)} runs.")
+
+    rds.close()
+
+if __name__ == '__main__':
+    NUMBER_OF_RUNS = 100
+    PLACE_TO_BENCHMARK = "Milan, Italy"
+
+    if not RASTER_INPUT.exists():
+        print(f"ERROR: Raster file not found at {RASTER_INPUT}.")
+        print("Please download the GHS-POP data and place it in the correct directory.")
     else:
-        run_duckdb_benchmark()
-        run_postgis_benchmark()
-        run_python_benchmark()
+        # Run benchmarks for all technologies
+        run_duckdb_raster_benchmark(RASTER_INPUT, PLACE_TO_BENCHMARK)
+        run_postgis_raster_benchmark(PLACE_TO_BENCHMARK, NUMBER_OF_RUNS)
+        run_python_raster_benchmark(RASTER_INPUT, PLACE_TO_BENCHMARK, NUMBER_OF_RUNS)
+
+        print("\nAll raster data benchmarks are complete.")
