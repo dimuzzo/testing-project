@@ -15,3 +15,11 @@ use_case,technology,operation_description,test_dataset,avg_execution_time_s,num_
 1. Ingestion (Vector Data),GeoPandas,Read Shapefile into GeoDataFrame,Com01012025_WGS84.shp,0.3400899656564544,99,N/A,Found 7896 features. Average of 99 hot cache runs.
 2. Filtering (Vector Data),GeoPandas,Filter GeoDataFrame by attribute,Com01012025_WGS84.shp,0.0009666000005381647,1,12.5801,Filtered to 1180 features. Cold start (first run).
 2. Filtering (Vector Data),GeoPandas,Filter GeoDataFrame by attribute,Com01012025_WGS84.shp,0.0008789333333337746,99,12.5801,Filtered to 1180 features. Average of 99 hot cache runs.
+1. Ingestion (Raster Data),DuckDB Spatial,Open GeoTIFF file,GHS_POP_ITALY_100m.tif,N/A,1,N/A,Technology does not support native raster operations.
+2. Filtering (Raster Data),DuckDB Spatial,Clip raster to Milan,GHS_POP_ITALY_100m.tif,N/A,1,N/A,Technology does not support native raster operations.
+2. Filtering (Raster Data),PostGIS,Clip raster to Milan,ghs_population table,8.122835199999827,1,N/A,"Found 1,256,044 people. Cold start query time (first run)."
+2. Filtering (Raster Data),PostGIS,Clip raster to Milan,ghs_population table,7.395653924242413,99,N/A,"Found 1,256,044 people. Average of 99 hot cache query times."
+1. Ingestion (Raster Data),Python (rioxarray),Open GeoTIFF file,GHS_POP_ITALY_100m.tif,0.14559429999962958,1,N/A,Cold start (first run).
+1. Ingestion (Raster Data),Python (rioxarray),Open GeoTIFF file,GHS_POP_ITALY_100m.tif,0.025549972727276327,99,N/A,Average of 99 hot cache runs.
+2. Filtering (Raster Data),Python (rioxarray),Clip raster to Milan,GHS_POP_ITALY_100m.tif,7.572912900000119,1,0.0791,"Found 1,256,044 people. Cold start (first run)."
+2. Filtering (Raster Data),Python (rioxarray),Clip raster to Milan,GHS_POP_ITALY_100m.tif,7.910143025252513,99,0.0791,"Found 1,256,044 people. Average of 99 hot cache runs."
