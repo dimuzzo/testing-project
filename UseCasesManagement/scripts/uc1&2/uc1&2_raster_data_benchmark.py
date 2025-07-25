@@ -87,6 +87,23 @@ def run_postgis_raster_benchmark(place_name, num_runs=100):
         cold_start_time = t.interval
         print(f"Cold start completed in {cold_start_time:.4f}s.")
 
+        pop_query = f"""
+        WITH clipped_raster AS (
+            SELECT ST_Clip(rast, 
+                ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast))
+            ) AS clipped_rast
+            FROM public.ghs_population
+            WHERE ST_Intersects(rast, ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast)))
+        )
+        SELECT (stats).sum
+        FROM (SELECT ST_SummaryStats(ST_Union(clipped_rast)) AS stats FROM clipped_raster) AS summary;
+        """
+        cursor = conn.cursor()
+        cursor.execute(pop_query)
+        total_population = int(cursor.fetchone()[0])
+        cursor.close()
+        print(f"Calculated total population for {place_name_clean} (PostGIS): {total_population:,}")
+
         # Save cold start results
         save_results({
             'use_case': '2. Filtering (Raster Data)',
@@ -96,7 +113,7 @@ def run_postgis_raster_benchmark(place_name, num_runs=100):
             'execution_time_s': cold_start_time,
             'num_runs': 1,
             'output_size_mb': 'N/A',
-            'notes': 'Cold start query time.'
+            'notes': f'Found {total_population:,} people. Cold start query time (first run).'
         })
 
         # Hot start runs
@@ -122,7 +139,7 @@ def run_postgis_raster_benchmark(place_name, num_runs=100):
                 'execution_time_s': avg_hot_time,
                 'num_runs': len(hot_filtering_times),
                 'output_size_mb': 'N/A',
-                'notes': f'Average of {len(hot_filtering_times)} hot cache query times.'
+                'notes': f'Found {total_population:,} people. Average of {len(hot_filtering_times)} hot cache query times.'
             })
             print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_filtering_times)} runs.")
 
@@ -192,9 +209,12 @@ def run_python_raster_benchmark(raster_path, place_name, num_runs=100):
 
     # Cold start run
     with Timer() as t:
-        clipped_rds = rds.rio.clip(boundary_gdf.geometry, boundary_gdf.crs, drop=True)
+        clipped_rds = rds.rio.clip(boundary_gdf.geometry.to_list(), boundary_gdf.crs, drop=True)
     cold_start_time = t.interval
     print(f"Cold start completed in {cold_start_time:.4f}s.")
+
+    total_population = int(clipped_rds.sum())
+    print(f"Calculated total population for {place_name.split(',')[0]} (rioxarray): {total_population:,}")
 
     # Save clipped file to measure size
     output_path = PROCESSED_DATA_DIR / "geopandas_generated" / f"{place_name.split(',')[0].lower()}_pop.tif"
@@ -211,7 +231,7 @@ def run_python_raster_benchmark(raster_path, place_name, num_runs=100):
         'execution_time_s': cold_start_time,
         'num_runs': 1,
         'output_size_mb': output_size_mb,
-        'notes': 'Cold start (first run).'
+        'notes': f'Found {total_population:,} people. Cold start (first run).'
     })
 
     # Hot start runs
@@ -219,7 +239,7 @@ def run_python_raster_benchmark(raster_path, place_name, num_runs=100):
     if num_runs > 1:
         for i in range(num_runs - 1):
             with Timer() as t:
-                _ = rds.rio.clip(boundary_gdf.geometry, boundary_gdf.crs, drop=True)
+                _ = rds.rio.clip(boundary_gdf.geometry.to_list(), boundary_gdf.crs, drop=True)
             hot_filtering_times.append(t.interval)
             print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
         print("\n")
@@ -234,7 +254,7 @@ def run_python_raster_benchmark(raster_path, place_name, num_runs=100):
             'execution_time_s': avg_hot_time,
             'num_runs': len(hot_filtering_times),
             'output_size_mb': output_size_mb,
-            'notes': f'Average of {len(hot_filtering_times)} hot cache runs.'
+            'notes': f'Found {total_population:,} people. Average of {len(hot_filtering_times)} hot cache runs.'
         })
         print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_filtering_times)} runs.")
 
