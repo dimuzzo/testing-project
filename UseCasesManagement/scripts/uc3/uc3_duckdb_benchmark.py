@@ -1,6 +1,7 @@
 import duckdb
 from pathlib import Path
 import sys
+import geopandas as gpd
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -18,10 +19,11 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
     """
     metric_crs = 'EPSG:32632'  # WGS 84 / UTM zone 32N for metric calculations
 
+    # List of the 3 selected operations for the benchmark.
     operations = [
         {
             'name': '3.1. Top 10 Largest Areas (sqm)',
-            'query': f"SELECT ST_Area(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}')) AS area_sqm FROM read_parquet('{{main_file}}') ORDER BY area_sqm DESC LIMIT 10",
+            'query': f"SELECT ST_Area(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}')) AS area_sqm, ST_AsWKB(geometry) as geom_wkb FROM read_parquet('{{main_file}}') ORDER BY area_sqm DESC LIMIT 10",
             'requires_secondary_file': False
         },
         {
@@ -32,7 +34,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
         {
             'name': '3.3. Restaurants NOT near Bus Stops',
             'query': f"""
-                     SELECT r.feature_id
+                     SELECT r.feature_id, ST_AsWKB(r.geometry) as geom_wkb
                      FROM read_parquet('{{main_file}}') AS r
                      WHERE NOT EXISTS (SELECT 1
                                        FROM read_parquet('{{secondary_file}}') AS bs
@@ -50,6 +52,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
     con.execute("INSTALL spatial; LOAD spatial;")
 
     for op in operations:
+        # Determine if this operation should be run based on the provided files
         if (op['requires_secondary_file'] and not secondary_file_path) or \
                 (not op['requires_secondary_file'] and secondary_file_path):
             continue
@@ -73,6 +76,31 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
         print("Result Preview:")
         print(result_df.to_string())
 
+        # Custom notes logic
+        if op['name'] == '3.2. Total Buffered Area (sqm)':
+            total_area = result_df.iloc[0, 0]
+            cold_notes = f'Total area: {total_area:,.2f} sqm. Cold start (first run).'
+            hot_notes= f'Total area: {total_area:,.2f} sqm. Average of {{count}} hot cache runs.'
+        else:
+            cold_notes = f'Found {len(result_df)} results. Cold start (first run).'
+            hot_notes = f'Found {len(result_df)} results. Average of {{count}} hot cache runs.'
+
+        # Save GeoParquet output for operations with geometry
+        if 'geom_wkb' in result_df.columns:
+            result_gdf = gpd.GeoDataFrame(
+                result_df.drop(columns=['geom_wkb']),
+                geometry=gpd.GeoSeries.from_wkb(result_df['geom_wkb']),
+                crs="EPSG:4326"
+            )
+
+            # Create a clean filename for the output
+            op_filename_part = op['name'].split('.')[1].strip().lower().replace(' ', '_')
+            output_filename = f"{city_name.lower()}_{op_filename_part}_duckdb.geoparquet"
+            output_path = PROCESSED_DATA_DIR / 'duckdb_generated' / output_filename
+
+            result_gdf.to_parquet(output_path)
+            print(f"Output saved to: {output_path}")
+
         save_results({
             'use_case': '3. Single Table Analysis',
             'technology': 'DuckDB Spatial',
@@ -81,7 +109,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
             'execution_time_s': cold_start_time,
             'num_runs': 1,
             'output_size_mb': 'N/A',
-            'notes': f'Found {len(result_df)} results. Cold start (first run).'
+            'notes': cold_notes
         })
 
         # Hot start runs
@@ -104,11 +132,10 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
                 'execution_time_s': avg_hot_time,
                 'num_runs': len(hot_start_times),
                 'output_size_mb': 'N/A',
-                'notes': f'Found {len(result_df)} results. Average of {len(hot_start_times)} hot cache runs.'
+                'notes': hot_notes
             })
 
     con.close()
-
 
 if __name__ == '__main__':
     NUMBER_OF_RUNS = 100
