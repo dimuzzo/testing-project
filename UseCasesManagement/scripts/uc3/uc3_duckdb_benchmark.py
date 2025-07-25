@@ -73,34 +73,43 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
         cold_start_time = t.interval
         print(f"Cold start completed in {cold_start_time:.6f}s.")
 
+        # Print a cleaner preview by dropping the WKB column
         print("Result Preview:")
-        print(result_df.to_string())
+        print(result_df.drop(columns=['geom_wkb'], errors='ignore').to_string())
+
+        # Initialize output size as N/A
+        output_size_mb = 'N/A'
+
+        # Save GeoParquet output for operations with geometry
+        if 'geom_wkb' in result_df.columns:
+            # Convert bytearray to bytes before creating GeoSeries
+            result_gdf = gpd.GeoDataFrame(
+                result_df.drop(columns=['geom_wkb']),
+                geometry=gpd.GeoSeries.from_wkb(result_df['geom_wkb'].apply(bytes)),
+                crs="EPSG:4326"
+            )
+
+        op_filename_part = op['name'].split('.')[1].strip().lower().replace(' ', '_')
+        output_filename = f"{city_name.lower()}_{op_filename_part}_duckdb.geoparquet"
+        output_path = PROCESSED_DATA_DIR /'duckdb_generated' / output_filename
+        PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+        result_gdf.to_parquet(output_path)
+        print(f"Output saved to {output_path.relative_to(WORKING_ROOT.parent)}.")
+
+        # Calculate file size
+        output_size_bytes = output_path.stat().st_size
+        output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
         # Custom notes logic
         if op['name'] == '3.2. Total Buffered Area (sqm)':
             total_area = result_df.iloc[0, 0]
             cold_notes = f'Total area: {total_area:,.2f} sqm. Cold start (first run).'
-            hot_notes= f'Total area: {total_area:,.2f} sqm. Average of {{count}} hot cache runs.'
+            hot_notes_template= f'Total area: {total_area:,.2f} sqm. Average of {{count}} hot cache runs.'
         else:
             cold_notes = f'Found {len(result_df)} results. Cold start (first run).'
-            hot_notes = f'Found {len(result_df)} results. Average of {{count}} hot cache runs.'
+            hot_notes_template = f'Found {len(result_df)} results. Average of {{count}} hot cache runs.'
 
-        # Save GeoParquet output for operations with geometry
-        if 'geom_wkb' in result_df.columns:
-            result_gdf = gpd.GeoDataFrame(
-                result_df.drop(columns=['geom_wkb']),
-                geometry=gpd.GeoSeries.from_wkb(result_df['geom_wkb']),
-                crs="EPSG:4326"
-            )
-
-            # Create a clean filename for the output
-            op_filename_part = op['name'].split('.')[1].strip().lower().replace(' ', '_')
-            output_filename = f"{city_name.lower()}_{op_filename_part}_duckdb.geoparquet"
-            output_path = PROCESSED_DATA_DIR / 'duckdb_generated' / output_filename
-
-            result_gdf.to_parquet(output_path)
-            print(f"Output saved to: {output_path}")
-
+        # Save cold run results
         save_results({
             'use_case': '3. Single Table Analysis',
             'technology': 'DuckDB Spatial',
@@ -108,7 +117,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
             'test_dataset': dataset_name,
             'execution_time_s': cold_start_time,
             'num_runs': 1,
-            'output_size_mb': 'N/A',
+            'output_size_mb': output_size_mb,
             'notes': cold_notes
         })
 
@@ -120,10 +129,13 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
                     _ = con.execute(sql_query).df()
                 hot_start_times.append(t.interval)
                 print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.6f}s.", end='\r')
-            print()
+            print("\n")
 
             avg_hot_time = sum(hot_start_times) / len(hot_start_times)
             print(f"Average hot start: {avg_hot_time:.6f}s over {len(hot_start_times)} runs.")
+            hot_notes = hot_notes_template.format(count=len(hot_start_times))
+
+            # Save hot run results
             save_results({
                 'use_case': '3. Single Table Analysis',
                 'technology': 'DuckDB Spatial',
@@ -131,7 +143,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
                 'test_dataset': dataset_name,
                 'execution_time_s': avg_hot_time,
                 'num_runs': len(hot_start_times),
-                'output_size_mb': 'N/A',
+                'output_size_mb': output_size_mb,
                 'notes': hot_notes
             })
 
