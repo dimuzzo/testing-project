@@ -6,135 +6,152 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmark_utils import Timer, save_results
 
-def run_duckdb_single_table_benchmark(input_file_path):
-    """
-    Runs a series of single-table geometric analysis benchmarks using DuckDB.
-    """
-    print(f"Testing DuckDB single table analysis using input file: {input_file_path.name}.")
+# Global Path Setup
+CURRENT_SCRIPT_PATH = Path(__file__).resolve()
+WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent.parent
+PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
 
-    # Define the metric CRS for calculations requiring meters (e.g., area, perimeter).
-    # EPSG:32632 is WGS 84 / UTM zone 32N, suitable for Northern Italy.
-    metric_crs = 'EPSG:32632'
+def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_path=None, num_runs=100):
+    """
+    Runs selected Use Case 3 benchmarks for DuckDB on a given city's datasets.
+    It can handle both single-file and two-file (join-like) operations.
+    """
+    metric_crs = 'EPSG:32632'  # WGS 84 / UTM zone 32N for metric calculations
 
-    # A list of dictionaries, where each dictionary defines a specific benchmark operation.
     operations = [
         {
-            # Basic aggregation on a transformed geometry.
-            'name': '3.1. Average Area (sqm)',
-            'query': f"SELECT AVG(ST_Area(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}'))) FROM read_parquet('{{file}}')"
+            'name': '3.1. Top 10 Largest Areas (sqm)',
+            'query': f"SELECT ST_Area(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}')) AS area_sqm FROM read_parquet('{{main_file}}') ORDER BY area_sqm DESC LIMIT 10",
+            'requires_secondary_file': False
         },
         {
-            # Geometric calculation, ordering, and limiting results.
-            'name': '3.2. Top 10 Largest Areas (sqm)',
-            'query': f"SELECT feature_id, ST_Area(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}')) AS area_sqm FROM read_parquet('{{file}}') ORDER BY area_sqm DESC LIMIT 10"
+            'name': '3.2. Total Buffered Area (sqm)',
+            'query': f"SELECT SUM(ST_Area(ST_Buffer(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}'), 10.0))) AS total_buffered_area FROM read_parquet('{{main_file}}')",
+            'requires_secondary_file': False
         },
         {
-            # Another aggregation (SUM) but on a different geometric property (perimeter).
-            'name': '3.3. Total Perimeter (m)',
-            'query': f"SELECT SUM(ST_Perimeter(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}'))) FROM read_parquet('{{file}}')"
-        },
-        {
-            # Filtering based on an intrinsic geometric property (number of vertices).
-            'name': '3.4. Select by Vertex Count',
-            'query': "SELECT COUNT(*) FROM read_parquet('{file}') WHERE ST_NPoints(geometry) > 50"
-        },
-        {
-            # Geometric calculation (centroid) followed by numeric aggregation.
-            'name': '3.5. Average Centroid Coordinate',
-            'query': "SELECT AVG(ST_X(ST_Centroid(geometry))), AVG(ST_Y(ST_Centroid(geometry))) FROM read_parquet('{file}')"
-        },
-        {
-            # A chain of two geometric operations (transform, buffer) followed by aggregation (SUM).
-            'name': '3.6. Total Buffered Area (sqm)',
-            'query': f"SELECT SUM(ST_Area(ST_Buffer(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}'), 10.0))) FROM read_parquet('{{file}}')"
-        },
-        {
-            # A more complex query with a subquery (CTE) to find lengthened features.
-            'name': '3.7. Top 10 by Bounding Box Ratio',
-            'query': """
-                WITH BBoxes AS (
-                    SELECT 
-                        feature_id,
-                        ST_XMax(geometry) - ST_XMin(geometry) as width,
-                        ST_YMax(geometry) - ST_YMin(geometry) as height
-                    FROM read_parquet('{file}')
-                    WHERE ST_GeometryType(geometry) = 'POLYGON'
-                )
-                SELECT feature_id, height / width AS ratio
-                FROM BBoxes
-                WHERE width > 0
-                ORDER BY ratio DESC
-                LIMIT 10;
-            """
-        },
-        {
-            # Categorization using a CASE statement on a calculated property.
-            'name': '3.8. Count by Area Class',
+            'name': '3.3. Restaurants NOT near Bus Stops',
             'query': f"""
-                SELECT 
-                    SUM(CASE WHEN area < 100 THEN 1 ELSE 0 END) AS small_count,
-                    SUM(CASE WHEN area >= 100 AND area < 500 THEN 1 ELSE 0 END) AS medium_count,
-                    SUM(CASE WHEN area >= 500 THEN 1 ELSE 0 END) AS large_count
-                FROM (SELECT ST_Area(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}')) AS area FROM read_parquet('{{file}}'))
-            """
-        },
-        {
-            # Measures shape irregularity by comparing a polygon's area to its convex hull's area.
-            'name': '3.9. Top 5 Least Convex',
-            'query': """
-                SELECT feature_id, ST_Area(geometry) / ST_Area(ST_ConvexHull(geometry)) AS convexity
-                FROM read_parquet('{file}')
-                WHERE ST_GeometryType(geometry) = 'POLYGON' AND ST_Area(ST_ConvexHull(geometry)) > 0
-                ORDER BY convexity ASC
-                LIMIT 5
-            """
-        },
-        {
-            # Tests the query optimizer as the COUNT(*) doesn't require the ST_Simplify operation,
-            # so a smart engine will skip it, resulting in a very fast execution time.
-            'name': '3.10. Simplify Geometries',
-            'query': "SELECT count(*) FROM (SELECT ST_Simplify(geometry, 1.0) FROM read_parquet('{file}'))"
+                     SELECT r.feature_id
+                     FROM read_parquet('{{main_file}}') AS r
+                     WHERE NOT EXISTS (SELECT 1
+                                       FROM read_parquet('{{secondary_file}}') AS bs
+                                       WHERE ST_DWithin(
+                                           ST_Transform(r.geometry, 'EPSG:4326', '{metric_crs}'), 
+                                           ST_Transform(bs.geometry, 'EPSG:4326', '{metric_crs}'), 
+                                           50.0
+                                       ))
+                     """,
+            'requires_secondary_file': True
         }
     ]
 
     con = duckdb.connect(database=':memory:')
     con.execute("INSTALL spatial; LOAD spatial;")
 
-    # Loop through each defined operation, run it, and save the results
     for op in operations:
-        print(f"\nRunning operation: '{op['name']}'.")
+        if (op['requires_secondary_file'] and not secondary_file_path) or \
+                (not op['requires_secondary_file'] and secondary_file_path):
+            continue
 
-        sql_query = op['query'].format(file=str(input_file_path).replace('\\', '/'))
+        print(f"\nRunning Operation '{op['name']}'.")
 
+        dataset_name = f"{city_name.lower()}_restaurants_bus_stops.geoparquet" if op[
+            'requires_secondary_file'] else main_file_path.name
+
+        sql_query = op['query'].format(
+            main_file=str(main_file_path).replace('\\', '/'),
+            secondary_file=str(secondary_file_path).replace('\\', '/') if secondary_file_path else ''
+        )
+
+        # Cold start run
         with Timer() as t:
             result_df = con.execute(sql_query).df()
+        cold_start_time = t.interval
+        print(f"Cold start completed in {cold_start_time:.6f}s.")
 
-        print(f"Operation completed in {t.interval:.6f} seconds.")
-
-        # Print a preview of the query result to the console for a sanity check.
         print("Result Preview:")
-        print(result_df.to_string(index=False))
+        print(result_df.to_string())
 
-        result_data = {
-            'use_case': '3. Single Table Analysis (OSM Data)',
+        save_results({
+            'use_case': '3. Single Table Analysis',
             'technology': 'DuckDB Spatial',
             'operation_description': op['name'],
-            'test_dataset': input_file_path.name,
-            'execution_time_s': t.interval,
+            'test_dataset': dataset_name,
+            'execution_time_s': cold_start_time,
+            'num_runs': 1,
             'output_size_mb': 'N/A',
-            'notes': f'Query returned {len(result_df)} rows.'
-        }
-        save_results(result_data)
+            'notes': f'Found {len(result_df)} results. Cold start (first run).'
+        })
+
+        # Hot start runs
+        hot_start_times = []
+        if num_runs > 1:
+            for i in range(num_runs - 1):
+                with Timer() as t:
+                    _ = con.execute(sql_query).df()
+                hot_start_times.append(t.interval)
+                print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.6f}s.", end='\r')
+            print()
+
+            avg_hot_time = sum(hot_start_times) / len(hot_start_times)
+            print(f"Average hot start: {avg_hot_time:.6f}s over {len(hot_start_times)} runs.")
+            save_results({
+                'use_case': '3. Single Table Analysis',
+                'technology': 'DuckDB Spatial',
+                'operation_description': op['name'],
+                'test_dataset': dataset_name,
+                'execution_time_s': avg_hot_time,
+                'num_runs': len(hot_start_times),
+                'output_size_mb': 'N/A',
+                'notes': f'Found {len(result_df)} results. Average of {len(hot_start_times)} hot cache runs.'
+            })
 
     con.close()
 
-if __name__ == '__main__':
-    current_script_path = Path(__file__).resolve()
-    working_root = current_script_path.parent.parent.parent
-    input_file = working_root / 'data' / 'processed' / 'milan_buildings_from_italy_pbf.geoparquet'
 
-    if not input_file.exists():
-        print(f"\nERROR: Input file not found at {input_file}.")
-    else:
-        run_duckdb_single_table_benchmark(input_file)
-        print("\nAll DuckDB tests for Use Case 3 are complete.")
+if __name__ == '__main__':
+    NUMBER_OF_RUNS = 100
+
+    # Define all the datasets needed for the benchmarks
+    datasets_by_city = {
+        'Pinerolo': {
+            'buildings': PROCESSED_DATA_DIR / 'pinerolo_buildings.geoparquet',
+            'restaurants': PROCESSED_DATA_DIR / 'pinerolo_restaurants.geoparquet',
+            'bus_stops': PROCESSED_DATA_DIR / 'pinerolo_bus_stops.geoparquet'
+        },
+        'Milan': {
+            'buildings': PROCESSED_DATA_DIR / 'milan_buildings.geoparquet',
+            'restaurants': PROCESSED_DATA_DIR / 'milan_restaurants.geoparquet',
+            'bus_stops': PROCESSED_DATA_DIR / 'milan_bus_stops.geoparquet'
+        },
+        'Rome': {
+            'buildings': PROCESSED_DATA_DIR / 'rome_buildings.geoparquet',
+            'restaurants': PROCESSED_DATA_DIR / 'rome_restaurants.geoparquet',
+            'bus_stops': PROCESSED_DATA_DIR / 'rome_bus_stops.geoparquet'
+        }
+    }
+
+    # Loop through each city and run the appropriate benchmarks
+    for city, paths in datasets_by_city.items():
+        # Print header only once per city
+        print(f"\nTesting DuckDB Single Table Analysis Operations for: {city.upper()}.")
+
+        # Run single-table benchmarks (Ops 3.1, 3.2) using the 'buildings' file
+        if paths['buildings'].exists():
+            run_duckdb_single_table_analysis(
+                city_name=city, main_file_path=paths['buildings'], num_runs=NUMBER_OF_RUNS
+            )
+        else:
+            print(f"\nERROR: Buildings file for {city} not found. Skipping single-table tests.")
+
+        # Run two-table benchmark (Op 3.3) using 'restaurants' and 'bus_stops' files
+        if paths['restaurants'].exists() and paths['bus_stops'].exists():
+            run_duckdb_single_table_analysis(
+                city_name=city, main_file_path=paths['restaurants'],
+                secondary_file_path=paths['bus_stops'], num_runs=NUMBER_OF_RUNS
+            )
+        else:
+            print(f"\nERROR: Restaurants or bus stops file for {city} not found. Skipping join-like test.")
+
+    print("\nAll DuckDB tests for Use Case 3 are complete.")
