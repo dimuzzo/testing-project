@@ -1,6 +1,7 @@
 import psycopg2
 from pathlib import Path
 import sys
+import pandas as pd
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -16,28 +17,25 @@ def run_postgis_single_table_analysis(city_name, buildings_table, restaurants_ta
     operations = [
         {
             'name': '3.1. Top 10 Largest Areas (sqm)',
-            'query': f"SELECT ST_Area(ST_Transform(geom, {metric_srid})) AS area_sqm FROM {buildings_table} ORDER BY area_sqm DESC LIMIT 10",
-            'type': 'single_table'
+            'query': f"SELECT ST_Area(ST_Transform(ST_MakeValid(geometry), {metric_srid})) AS area_sqm FROM {buildings_table} ORDER BY area_sqm DESC LIMIT 10"
         },
         {
             'name': '3.2. Total Buffered Area (sqm)',
-            'query': f"SELECT SUM(ST_Area(ST_Buffer(ST_Transform(geom, {metric_srid}), 10.0))) AS total_buffered_area FROM {buildings_table}",
-            'type': 'single_table'
+            'query': f"SELECT SUM(ST_Area(ST_Buffer(ST_Transform(ST_MakeValid(geometry), {metric_srid}), 10.0, 'quad_segs=16'))) AS total_buffered_area FROM {buildings_table}"
         },
         {
             'name': '3.3. Restaurants NOT near Bus Stops',
             'query': f"""
-                     SELECT r.feature_id
+                     SELECT r.id
                      FROM {restaurants_table} AS r
                      WHERE NOT EXISTS (SELECT 1
                                        FROM {bus_stops_table} AS bs
                                        WHERE ST_DWithin(
-                                           ST_Transform(r.geom, {metric_srid}),
-                                           ST_Transform(bs.geom, {metric_srid}),
+                                           ST_Transform(ST_MakeValid(r.geometry), {metric_srid}),
+                                           ST_Transform(ST_MakeValid(bs.geometry), {metric_srid}),
                                            50.0
                                        ))
-                     """,
-            'type': 'two_tables'
+                     """
         }
     ]
 
@@ -46,7 +44,8 @@ def run_postgis_single_table_analysis(city_name, buildings_table, restaurants_ta
         conn = psycopg2.connect(dbname='osm_benchmark_db', user='postgres', password='postgres', host='localhost', port='5432')
 
         for op in operations:
-            print(f"\nRunning Operation: '{op['name']}'.")
+            sql_query = op['query']
+            print(f"\nRunning Operation '{op['name']}'.")
 
             dataset_name = f"{city_name.lower()}_tables"
 
@@ -55,23 +54,35 @@ def run_postgis_single_table_analysis(city_name, buildings_table, restaurants_ta
                 cursor = conn.cursor()
                 cursor.execute(op['query'])
                 result = cursor.fetchall()
+                column_names = [desc[0] for desc in cursor.description]
                 cursor.close()
             cold_start_time = t.interval
             print(f"Cold start completed in {cold_start_time:.6f}s.")
 
-            # Print a cleaner preview by dropping the WKB column
+            # Convert results to a Pandas DataFrame and print
+            result_df = pd.DataFrame(result, columns=column_names)
             print("Result Preview:")
-            print(result_df.drop(columns=['geom_wkb'], errors='ignore').to_string())
+            print(result_df.to_string())
 
+            # Custom notes logic
+            if op['name'] == '3.2. Total Buffered Area (sqm)':
+                total_area = result_df.iloc[0, 0]
+                cold_notes = f'Total area: {total_area:,.2f} sqm. Cold start (first run).'
+                hot_notes_template = f'Total area: {total_area:,.2f} sqm. Average of {{count}} hot cache runs.'
+            else:
+                cold_notes = f'Found {len(result_df)} results. Cold start (first run).'
+                hot_notes_template = f'Found {len(result_df)} results. Average of {{count}} hot cache runs.'
+
+            # Save cold run results
             save_results({
-                'use_case': '3. Single Table Analysis',
+                'use_case': '3. Single Table Analysis (OSM Data)',
                 'technology': 'PostGIS',
                 'operation_description': op['name'],
                 'test_dataset': dataset_name,
                 'execution_time_s': cold_start_time,
                 'num_runs': 1,
                 'output_size_mb': 'N/A',
-                'notes': f'Found {len(result)} results. Cold start (first run).'
+                'notes': cold_notes
             })
 
             # Hot start runs
@@ -80,25 +91,27 @@ def run_postgis_single_table_analysis(city_name, buildings_table, restaurants_ta
                 for i in range(num_runs - 1):
                     with Timer() as t:
                         cursor = conn.cursor()
-                        cursor.execute(op['query'])
+                        cursor.execute(sql_query)
                         _ = cursor.fetchall()
                         cursor.close()
                     hot_start_times.append(t.interval)
                     print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.6f}s.", end='\r')
-                print()
+                print("\n")
 
                 avg_hot_time = sum(hot_start_times) / len(hot_start_times)
                 print(f"Average hot start: {avg_hot_time:.6f}s over {len(hot_start_times)} runs.")
+                hot_notes = hot_notes_template.format(count=len(hot_start_times))
 
+                # Save hot run results
                 save_results({
-                    'use_case': '3. Single Table Analysis',
+                    'use_case': '3. Single Table Analysis (OSM Data)',
                     'technology': 'PostGIS',
                     'operation_description': op['name'],
                     'test_dataset': dataset_name,
                     'execution_time_s': avg_hot_time,
                     'num_runs': len(hot_start_times),
                     'output_size_mb': 'N/A',
-                    'notes': f'Found {len(result)} results. Average of {len(hot_start_times)} hot cache runs.'
+                    'notes': hot_notes
                 })
 
     except Exception as e:
