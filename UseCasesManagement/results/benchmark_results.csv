@@ -41,3 +41,21 @@ use_case,technology,operation_description,test_dataset,avg_execution_time_s,num_
 3. Single Table Analysis (OSM Data),DuckDB Spatial,3.2. Total Buffered Area (sqm),rome_buildings.geoparquet,6.267810156565651,99,0.0179,"Total area: 422,992,401.82 sqm. Average of 99 hot cache runs."
 3. Single Table Analysis (OSM Data),DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops.geoparquet,22.935051099999782,1,0.0982,Found 2562 results. Cold start (first run).
 3. Single Table Analysis (OSM Data),DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops.geoparquet,17.20910215050504,99,0.0982,Found 2562 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),PostGIS,3.1. Top 10 Largest Areas (sqm),pinerolo_tables,0.043638799999826006,1,N/A,Found 10 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),PostGIS,3.1. Top 10 Largest Areas (sqm),pinerolo_tables,0.017300052525175174,99,N/A,Found 10 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),PostGIS,3.2. Total Buffered Area (sqm),pinerolo_tables,0.14370379999945726,1,N/A,"Total area: 7,053,572.31 sqm. Cold start (first run)."
+3. Single Table Analysis (OSM Data),PostGIS,3.2. Total Buffered Area (sqm),pinerolo_tables,0.14361405050506004,99,N/A,"Total area: 7,053,572.31 sqm. Average of 99 hot cache runs."
+3. Single Table Analysis (OSM Data),PostGIS,3.3. Restaurants NOT near Bus Stops,pinerolo_tables,0.003416500000639644,1,N/A,Found 15 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),PostGIS,3.3. Restaurants NOT near Bus Stops,pinerolo_tables,0.0008460787878838612,99,N/A,Found 15 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),PostGIS,3.1. Top 10 Largest Areas (sqm),milan_tables,0.2137829999992391,1,N/A,Found 10 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),PostGIS,3.1. Top 10 Largest Areas (sqm),milan_tables,0.19552625959597503,99,N/A,Found 10 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),PostGIS,3.2. Total Buffered Area (sqm),milan_tables,1.3686822999998185,1,N/A,"Total area: 111,512,699.57 sqm. Cold start (first run)."
+3. Single Table Analysis (OSM Data),PostGIS,3.2. Total Buffered Area (sqm),milan_tables,1.3398793464646293,99,N/A,"Total area: 111,512,699.57 sqm. Average of 99 hot cache runs."
+3. Single Table Analysis (OSM Data),PostGIS,3.3. Restaurants NOT near Bus Stops,milan_tables,10.531660999999076,1,N/A,Found 2135 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),PostGIS,3.3. Restaurants NOT near Bus Stops,milan_tables,10.493732904040463,99,N/A,Found 2135 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),PostGIS,3.1. Top 10 Largest Areas (sqm),rome_tables,0.4030977000002167,1,N/A,Found 10 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),PostGIS,3.1. Top 10 Largest Areas (sqm),rome_tables,0.37676265050528185,99,N/A,Found 10 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),PostGIS,3.2. Total Buffered Area (sqm),rome_tables,2.8032135000012204,1,N/A,"Total area: 299,239,624.65 sqm. Cold start (first run)."
+3. Single Table Analysis (OSM Data),PostGIS,3.2. Total Buffered Area (sqm),rome_tables,2.7774867747473837,99,N/A,"Total area: 299,239,624.65 sqm. Average of 99 hot cache runs."
+3. Single Table Analysis (OSM Data),PostGIS,3.3. Restaurants NOT near Bus Stops,rome_tables,40.111434700000245,1,N/A,Found 2298 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),PostGIS,3.3. Restaurants NOT near Bus Stops,rome_tables,40.34111315353529,99,N/A,Found 2298 results. Average of 99 hot cache runs.
