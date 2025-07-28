@@ -23,21 +23,21 @@ use_case,technology,operation_description,test_dataset,avg_execution_time_s,num_
 1. Ingestion (Raster Data),Python (rioxarray),Open GeoTIFF file,GHS_POP_ITALY_100m.tif,0.025549972727276327,99,N/A,Average of 99 hot cache runs.
 2. Filtering (Raster Data),Python (rioxarray),Clip raster to Milan,GHS_POP_ITALY_100m.tif,7.572912900000119,1,0.0791,"Found 1,256,044 people. Cold start (first run)."
 2. Filtering (Raster Data),Python (rioxarray),Clip raster to Milan,GHS_POP_ITALY_100m.tif,7.910143025252513,99,0.0791,"Found 1,256,044 people. Average of 99 hot cache runs."
-3. Single Table Analysis,DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),pinerolo_buildings.geoparquet,0.028370200000040313,1,0.0137,Found 10 results. Cold start (first run).
-3. Single Table Analysis,DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),pinerolo_buildings.geoparquet,0.014230822222221107,99,0.0137,Found 10 results. Average of 99 hot cache runs.
-3. Single Table Analysis,DuckDB Spatial,3.2. Total Buffered Area (sqm),pinerolo_buildings.geoparquet,0.11708200000009583,1,0.0137,"Total area: 11,000,485.15 sqm. Cold start (first run)."
-3. Single Table Analysis,DuckDB Spatial,3.2. Total Buffered Area (sqm),pinerolo_buildings.geoparquet,0.11504673636364379,99,0.0137,"Total area: 11,000,485.15 sqm. Average of 99 hot cache runs."
-3. Single Table Analysis,DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,pinerolo_restaurants_bus_stops.geoparquet,0.02516969999999219,1,0.0084,Found 16 results. Cold start (first run).
-3. Single Table Analysis,DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,pinerolo_restaurants_bus_stops.geoparquet,0.006640686868684387,99,0.0084,Found 16 results. Average of 99 hot cache runs.
-3. Single Table Analysis,DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),milan_buildings.geoparquet,0.19613830000002963,1,0.0167,Found 10 results. Cold start (first run).
-3. Single Table Analysis,DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),milan_buildings.geoparquet,0.18897734141414316,99,0.0167,Found 10 results. Average of 99 hot cache runs.
-3. Single Table Analysis,DuckDB Spatial,3.2. Total Buffered Area (sqm),milan_buildings.geoparquet,1.9798569000000725,1,0.0167,"Total area: 178,263,831.25 sqm. Cold start (first run)."
-3. Single Table Analysis,DuckDB Spatial,3.2. Total Buffered Area (sqm),milan_buildings.geoparquet,1.9942843939393908,99,0.0167,"Total area: 178,263,831.25 sqm. Average of 99 hot cache runs."
-3. Single Table Analysis,DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,milan_restaurants_bus_stops.geoparquet,5.27048759999991,1,0.0771,Found 2384 results. Cold start (first run).
-3. Single Table Analysis,DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,milan_restaurants_bus_stops.geoparquet,5.114424972727268,99,0.0771,Found 2384 results. Average of 99 hot cache runs.
-3. Single Table Analysis,DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),rome_buildings.geoparquet,0.558125999999902,1,0.0179,Found 10 results. Cold start (first run).
-3. Single Table Analysis,DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),rome_buildings.geoparquet,0.542323801010114,99,0.0179,Found 10 results. Average of 99 hot cache runs.
-3. Single Table Analysis,DuckDB Spatial,3.2. Total Buffered Area (sqm),rome_buildings.geoparquet,6.078137100000049,1,0.0179,"Total area: 422,992,401.82 sqm. Cold start (first run)."
-3. Single Table Analysis,DuckDB Spatial,3.2. Total Buffered Area (sqm),rome_buildings.geoparquet,6.267810156565651,99,0.0179,"Total area: 422,992,401.82 sqm. Average of 99 hot cache runs."
-3. Single Table Analysis,DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops.geoparquet,22.935051099999782,1,0.0982,Found 2562 results. Cold start (first run).
-3. Single Table Analysis,DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops.geoparquet,17.20910215050504,99,0.0982,Found 2562 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),pinerolo_buildings.geoparquet,0.028370200000040313,1,0.0137,Found 10 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),pinerolo_buildings.geoparquet,0.014230822222221107,99,0.0137,Found 10 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.2. Total Buffered Area (sqm),pinerolo_buildings.geoparquet,0.11708200000009583,1,0.0137,"Total area: 11,000,485.15 sqm. Cold start (first run)."
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.2. Total Buffered Area (sqm),pinerolo_buildings.geoparquet,0.11504673636364379,99,0.0137,"Total area: 11,000,485.15 sqm. Average of 99 hot cache runs."
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,pinerolo_restaurants_bus_stops.geoparquet,0.02516969999999219,1,0.0084,Found 16 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,pinerolo_restaurants_bus_stops.geoparquet,0.006640686868684387,99,0.0084,Found 16 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),milan_buildings.geoparquet,0.19613830000002963,1,0.0167,Found 10 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),milan_buildings.geoparquet,0.18897734141414316,99,0.0167,Found 10 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.2. Total Buffered Area (sqm),milan_buildings.geoparquet,1.9798569000000725,1,0.0167,"Total area: 178,263,831.25 sqm. Cold start (first run)."
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.2. Total Buffered Area (sqm),milan_buildings.geoparquet,1.9942843939393908,99,0.0167,"Total area: 178,263,831.25 sqm. Average of 99 hot cache runs."
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,milan_restaurants_bus_stops.geoparquet,5.27048759999991,1,0.0771,Found 2384 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,milan_restaurants_bus_stops.geoparquet,5.114424972727268,99,0.0771,Found 2384 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),rome_buildings.geoparquet,0.558125999999902,1,0.0179,Found 10 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.1. Top 10 Largest Areas (sqm),rome_buildings.geoparquet,0.542323801010114,99,0.0179,Found 10 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.2. Total Buffered Area (sqm),rome_buildings.geoparquet,6.078137100000049,1,0.0179,"Total area: 422,992,401.82 sqm. Cold start (first run)."
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.2. Total Buffered Area (sqm),rome_buildings.geoparquet,6.267810156565651,99,0.0179,"Total area: 422,992,401.82 sqm. Average of 99 hot cache runs."
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops.geoparquet,22.935051099999782,1,0.0982,Found 2562 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),DuckDB Spatial,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops.geoparquet,17.20910215050504,99,0.0982,Found 2562 results. Average of 99 hot cache runs.
