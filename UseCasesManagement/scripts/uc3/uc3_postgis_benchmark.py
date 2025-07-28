@@ -17,11 +17,12 @@ def run_postgis_single_table_analysis(city_name, buildings_table, restaurants_ta
     operations = [
         {
             'name': '3.1. Top 10 Largest Areas (sqm)',
-            'query': f"SELECT ST_Area(ST_Transform(ST_MakeValid(geometry), {metric_srid})) AS area_sqm FROM {buildings_table} ORDER BY area_sqm DESC LIMIT 10"
+            'query': f"SELECT ST_Area(ST_Transform(geometry, {metric_srid})) AS area_sqm FROM {buildings_table} ORDER BY area_sqm DESC LIMIT 10"
         },
         {
             'name': '3.2. Total Buffered Area (sqm)',
-            'query': f"SELECT SUM(ST_Area(ST_Buffer(ST_Transform(ST_MakeValid(geometry), {metric_srid}), 10.0, 'quad_segs=16'))) AS total_buffered_area FROM {buildings_table}"
+            # Added 'quad_segs=16' to ST_Buffer. This increases the precision of the buffer for a better analysis
+            'query': f"SELECT SUM(ST_Area(ST_Buffer(ST_Transform(geometry, {metric_srid}), 10.0, 'quad_segs=16'))) AS total_buffered_area FROM {buildings_table}"
         },
         {
             'name': '3.3. Restaurants NOT near Bus Stops',
@@ -31,8 +32,8 @@ def run_postgis_single_table_analysis(city_name, buildings_table, restaurants_ta
                      WHERE NOT EXISTS (SELECT 1
                                        FROM {bus_stops_table} AS bs
                                        WHERE ST_DWithin(
-                                           ST_Transform(ST_MakeValid(r.geometry), {metric_srid}),
-                                           ST_Transform(ST_MakeValid(bs.geometry), {metric_srid}),
+                                           ST_Transform(r.geometry, {metric_srid}),
+                                           ST_Transform(bs.geometry, {metric_srid}),
                                            50.0
                                        ))
                      """
