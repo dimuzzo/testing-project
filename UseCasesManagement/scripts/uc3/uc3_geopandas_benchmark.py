@@ -47,7 +47,7 @@ def run_geopandas_single_table_analysis(city_name, buildings_path, restaurants_p
         bus_valid.geometry = bus_valid.geometry.buffer(0)
         bus_metric = bus_valid.to_crs(metric_crs)
 
-        # Find indices of restaurants that ARE within 50 meters of a bus stop
+        # Find the indices of restaurants that ARE within 50 meters of a bus stop
         intersecting_indices = gpd.sjoin_nearest(
             rest_metric, bus_metric, how='inner', max_distance=50
         ).index
@@ -134,7 +134,7 @@ def run_geopandas_single_table_analysis(city_name, buildings_path, restaurants_p
                     _ = op['func'](*op['data'])
                 hot_start_times.append(t.interval)
                 print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.6f}s.", end='\r')
-            print()
+            print("\n")
 
             avg_hot_time = sum(hot_start_times) / len(hot_start_times)
             print(f"Average hot start: {avg_hot_time:.6f}s over {len(hot_start_times)} runs.")
