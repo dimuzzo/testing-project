@@ -89,16 +89,16 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
                 crs="EPSG:4326"
             )
 
-        op_filename_part = op['name'].split('.')[1].strip().lower().replace(' ', '_')
-        output_filename = f"{city_name.lower()}_{op_filename_part}_duckdb.geoparquet"
-        output_path = PROCESSED_DATA_DIR / 'duckdb_generated' / output_filename
-        PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
-        result_gdf.to_parquet(output_path)
-        print(f"Output saved to {output_path.relative_to(WORKING_ROOT.parent)}.")
+            op_filename_part = op['name'].split('.')[1].strip().lower().replace(' ', '_')
+            output_filename = f"{city_name.lower()}_{op_filename_part}_duckdb.geoparquet"
+            output_path = PROCESSED_DATA_DIR / 'duckdb_generated' / output_filename
+            PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+            result_gdf.to_parquet(output_path)
+            print(f"Output saved to {output_path.relative_to(WORKING_ROOT.parent)}.")
 
-        # Calculate file size
-        output_size_bytes = output_path.stat().st_size
-        output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
+            # Calculate file size
+            output_size_bytes = output_path.stat().st_size
+            output_size_mb = f"{(output_size_bytes / (1024 * 1024)):.4f}"
 
         # Custom notes logic
         if op['name'] == '3.2. Total Buffered Area (sqm)':
