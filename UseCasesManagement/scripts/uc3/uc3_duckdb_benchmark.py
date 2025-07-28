@@ -91,7 +91,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
 
         op_filename_part = op['name'].split('.')[1].strip().lower().replace(' ', '_')
         output_filename = f"{city_name.lower()}_{op_filename_part}_duckdb.geoparquet"
-        output_path = PROCESSED_DATA_DIR /'duckdb_generated' / output_filename
+        output_path = PROCESSED_DATA_DIR / 'duckdb_generated' / output_filename
         PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
         result_gdf.to_parquet(output_path)
         print(f"Output saved to {output_path.relative_to(WORKING_ROOT.parent)}.")
@@ -111,7 +111,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
 
         # Save cold run results
         save_results({
-            'use_case': '3. Single Table Analysis',
+            'use_case': '3. Single Table Analysis (OSM Data)',
             'technology': 'DuckDB Spatial',
             'operation_description': op['name'],
             'test_dataset': dataset_name,
@@ -137,7 +137,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
 
             # Save hot run results
             save_results({
-                'use_case': '3. Single Table Analysis',
+                'use_case': '3. Single Table Analysis (OSM Data)',
                 'technology': 'DuckDB Spatial',
                 'operation_description': op['name'],
                 'test_dataset': dataset_name,
@@ -176,7 +176,7 @@ if __name__ == '__main__':
         # Print header only once per city
         print(f"\nTesting DuckDB Single Table Analysis Operations for: {city.upper()}.")
 
-        # Run single-table benchmarks (Ops 3.1, 3.2) using the 'buildings' file
+        # Run single-table benchmarks using the 'buildings' file
         if paths['buildings'].exists():
             run_duckdb_single_table_analysis(
                 city_name=city, main_file_path=paths['buildings'], num_runs=NUMBER_OF_RUNS
@@ -184,7 +184,7 @@ if __name__ == '__main__':
         else:
             print(f"\nERROR: Buildings file for {city} not found. Skipping single-table tests.")
 
-        # Run two-table benchmark (Op 3.3) using 'restaurants' and 'bus_stops' files
+        # Run two-table benchmark using 'restaurants' and 'bus_stops' files
         if paths['restaurants'].exists() and paths['bus_stops'].exists():
             run_duckdb_single_table_analysis(
                 city_name=city, main_file_path=paths['restaurants'],
