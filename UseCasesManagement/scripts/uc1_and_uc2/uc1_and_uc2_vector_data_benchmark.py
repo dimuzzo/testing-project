@@ -162,7 +162,7 @@ def run_postgis_vector_benchmark(num_runs=100):
 
         # A standard SQL attribute filter. Performance depends on the PostgreSQL query optimizer,
         # table statistics and the presence of a database index on the 'cod_reg' column.
-        query = "SELECT * FROM comuni_istat WHERE cod_reg = 1;"
+        query = "SELECT * FROM vector_data.comuni_istat WHERE cod_reg = 1;"
 
         # Cold start run
         with Timer() as t:

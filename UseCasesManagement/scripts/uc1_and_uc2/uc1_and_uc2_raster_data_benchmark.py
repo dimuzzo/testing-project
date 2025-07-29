@@ -72,7 +72,7 @@ def run_postgis_raster_benchmark(place_name, num_runs=100):
         SELECT ST_AsGDALRaster(ST_Clip(rast, 
             ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast))
         ), 'GTiff') 
-        FROM public.ghs_population
+        FROM raster_data.ghs_population
         WHERE ST_Intersects(rast, ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast)));
         """
 
@@ -92,7 +92,7 @@ def run_postgis_raster_benchmark(place_name, num_runs=100):
             SELECT ST_Clip(rast, 
                 ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast))
             ) AS clipped_rast
-            FROM public.ghs_population
+            FROM raster_data.ghs_population
             WHERE ST_Intersects(rast, ST_Transform(ST_SetSRID(ST_GeomFromText('{area_wkt}'), 4326), ST_SRID(rast)))
         )
         SELECT (stats).sum
