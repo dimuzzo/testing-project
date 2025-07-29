@@ -115,7 +115,7 @@ def run_postgis_vector_raster_analysis(num_runs=100):
                 'execution_time_s': avg_hot_time,
                 'num_runs': len(hot_start_times),
                 'output_size_mb': 'N/A',
-                'notes': f'Total Pop: {total_population:,.0f} in {len(results)} municipalities. Average of {len(hot_start_times)} hot cache runs.'
+                'notes': f'Total Population: {total_population:,.0f} in {len(results)} municipalities. Average of {len(hot_start_times)} hot cache runs.'
             })
 
     except Exception as e:
