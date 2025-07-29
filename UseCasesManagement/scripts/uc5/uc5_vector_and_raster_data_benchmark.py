@@ -30,44 +30,41 @@ def run_postgis_vector_raster_analysis(num_runs=100):
         # This query calculates the sum of population for each municipality in Piedmont.
         # It joins the vector comuni_istat table with the raster ghs_population table.
         query = f"""
-                        WITH valid_comuni AS (
-                            SELECT
-                                ST_CollectionExtract(ST_MakeValid(geom), 3) as geom,
-                                comune
-                            FROM vector_data.comuni_istat
-                            WHERE cod_reg = {TARGET_REGION_CODE}
-                              AND ST_IsValid(geom) = true
-                              AND ST_Area(geom) > 0
-                        ),
-                        filtered_comuni AS (
-                            SELECT 
-                                geom,
-                                comune
-                            FROM valid_comuni
-                            WHERE ST_X(ST_Centroid(geom)) BETWEEN -180 AND 180
-                              AND ST_Y(ST_Centroid(geom)) BETWEEN -90 AND 90
-                        ),
-                        transformed_comuni AS (
-                            SELECT
-                                CASE 
-                                    WHEN ST_IsValid(ST_Transform(geom, 54009)) THEN ST_Transform(geom, 54009)
-                                    ELSE ST_Transform(ST_Buffer(geom, 0), 54009)
-                                END AS geom,
-                                comune
-                            FROM filtered_comuni
-                            WHERE ST_Transform(geom, 54009) IS NOT NULL
-                        )
-                        SELECT
-                            c.comune,
-                            COALESCE((ST_SummaryStats(ST_Clip(ST_Union(p.rast), c.geom, true))).sum, 0) AS total_population
-                        FROM
-                            raster_data.ghs_population p
-                        JOIN
-                            transformed_comuni c ON ST_Intersects(p.rast, c.geom)
-                        GROUP BY
-                            c.comune, c.geom
-                        HAVING COUNT(p.rast) > 0;
-                        """
+                WITH raster_srid AS (
+                    SELECT ST_SRID(rast) as srid FROM raster_data.ghs_population LIMIT 1
+                ),
+                comuni_clean AS (
+                    SELECT 
+                        comune,
+                        geom
+                    FROM vector_data.comuni_istat
+                    WHERE cod_reg = 1 
+                        AND geom IS NOT NULL
+                        AND ST_IsValid(geom)
+                        AND NOT ST_IsEmpty(geom)
+                        AND ST_XMin(geom) > -180 AND ST_XMax(geom) < 180
+                        AND ST_YMin(geom) > -90 AND ST_YMax(geom) < 90
+                ),
+                comuni_piemonte AS (
+                    SELECT 
+                        c.comune,
+                        CASE 
+                            WHEN ST_SRID(c.geom) = r.srid THEN c.geom
+                            ELSE ST_Transform(c.geom, r.srid)
+                        END as geom
+                    FROM comuni_clean c
+                    CROSS JOIN raster_srid r
+                )
+                SELECT
+                    c.comune,
+                    SUM(COALESCE((ST_SummaryStats(ST_Clip(p.rast, c.geom, true))).sum, 0)) AS total_population
+                FROM 
+                    comuni_piemonte c
+                JOIN raster_data.ghs_population p ON ST_Intersects(p.rast, c.geom)
+                GROUP BY
+                    c.comune
+                ORDER BY c.comune
+                """
 
         # Cold start run
         with Timer() as t:
@@ -76,7 +73,11 @@ def run_postgis_vector_raster_analysis(num_runs=100):
             results = cursor.fetchall()
             cursor.close()
         cold_start_time = t.interval
-        print(f"Cold start completed in {cold_start_time:.4f}s.")
+
+        # Calculate total population
+        total_population = sum(item[1] for item in results if item[1] is not None)
+        print(f"Cold start completed in {cold_start_time:.4f}s. Calculated stats for {len(results)} municipalities.")
+        print(f"Total population for Piedmont (PostGIS): {total_population:,.0f}")
 
         # Save cold start results
         save_results({
@@ -87,7 +88,7 @@ def run_postgis_vector_raster_analysis(num_runs=100):
             'execution_time_s': cold_start_time,
             'num_runs': 1,
             'output_size_mb': 'N/A',
-            'notes': f'Calculated population for {len(results)} municipalities. Cold start (first run).'
+            'notes': f'Total Population: {total_population:,.0f} in {len(results)} municipalities. Cold start (first run).'
         })
 
         # Hot start runs
@@ -114,7 +115,7 @@ def run_postgis_vector_raster_analysis(num_runs=100):
                 'execution_time_s': avg_hot_time,
                 'num_runs': len(hot_start_times),
                 'output_size_mb': 'N/A',
-                'notes': f'Calculated population for {len(results)} municipalities. Average of {len(hot_start_times)} hot cache runs.'
+                'notes': f'Total Pop: {total_population:,.0f} in {len(results)} municipalities. Average of {len(hot_start_times)} hot cache runs.'
             })
 
     except Exception as e:
@@ -141,7 +142,11 @@ def run_python_vector_raster_analysis(vector_path, raster_path, num_runs=100):
     with Timer() as t:
         stats = zonal_stats(piedmont_gdf, str(raster_path), stats="sum", nodata=-200)
     cold_start_time = t.interval
-    print(f"Cold start completed in {cold_start_time:.4f}s.")
+
+    # Calculate total population
+    total_population = sum(item['sum'] for item in stats if item['sum'] is not None)
+    print(f"Cold start completed in {cold_start_time:.4f}s. Calculated stats for {len(stats)} municipalities.")
+    print(f"Total population for Piemonte (Python): {total_population:,.0f}")
 
     # Save cold start results
     save_results({
@@ -152,7 +157,7 @@ def run_python_vector_raster_analysis(vector_path, raster_path, num_runs=100):
         'execution_time_s': cold_start_time,
         'num_runs': 1,
         'output_size_mb': 'N/A',
-        'notes': f'Calculated population for {len(stats)} municipalities. Cold start (first run).'
+        'notes': f'Total Population: {total_population:,.0f} in {len(stats)} municipalities. Cold start (first run).'
     })
 
     # Hot start runs
@@ -176,7 +181,7 @@ def run_python_vector_raster_analysis(vector_path, raster_path, num_runs=100):
             'execution_time_s': avg_hot_time,
             'num_runs': len(hot_start_times),
             'output_size_mb': 'N/A',
-            'notes': f'Calculated population for {len(stats)} municipalities. Average of {len(hot_start_times)} hot cache runs.'
+            'notes': f'Total Population: {total_population:,.0f} in {len(stats)} municipalities.. Average of {len(hot_start_times)} hot cache runs.'
         })
 
 if __name__ == '__main__':
