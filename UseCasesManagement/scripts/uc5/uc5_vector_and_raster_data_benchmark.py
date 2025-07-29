@@ -1,6 +1,5 @@
 import geopandas as gpd
 import psycopg2
-import pandas as pd
 from rasterstats import zonal_stats
 from pathlib import Path
 import sys
@@ -31,19 +30,44 @@ def run_postgis_vector_raster_analysis(num_runs=100):
         # This query calculates the sum of population for each municipality in Piedmont.
         # It joins the vector comuni_istat table with the raster ghs_population table.
         query = f"""
-                WITH pir_comuni AS (
-                    SELECT geom, comune
-                    FROM vector_data.comuni_istat
-                    WHERE cod_reg = {TARGET_REGION_CODE}
-                )
-                SELECT
-                    c.comune,
-                    (ST_SummaryStats(ST_Clip(ST_Union(p.rast), c.geom, true))).sum AS total_population
-                FROM
-                    raster_data.ghs_population p
-                JOIN pir_comuni c ON ST_Intersects(p.rast, ST_Transform(c.geom, ST_SRID(p.rast)))
-                GROUP BY c.comune, c.geom;
-                """
+                        WITH valid_comuni AS (
+                            SELECT
+                                ST_CollectionExtract(ST_MakeValid(geom), 3) as geom,
+                                comune
+                            FROM vector_data.comuni_istat
+                            WHERE cod_reg = {TARGET_REGION_CODE}
+                              AND ST_IsValid(geom) = true
+                              AND ST_Area(geom) > 0
+                        ),
+                        filtered_comuni AS (
+                            SELECT 
+                                geom,
+                                comune
+                            FROM valid_comuni
+                            WHERE ST_X(ST_Centroid(geom)) BETWEEN -180 AND 180
+                              AND ST_Y(ST_Centroid(geom)) BETWEEN -90 AND 90
+                        ),
+                        transformed_comuni AS (
+                            SELECT
+                                CASE 
+                                    WHEN ST_IsValid(ST_Transform(geom, 54009)) THEN ST_Transform(geom, 54009)
+                                    ELSE ST_Transform(ST_Buffer(geom, 0), 54009)
+                                END AS geom,
+                                comune
+                            FROM filtered_comuni
+                            WHERE ST_Transform(geom, 54009) IS NOT NULL
+                        )
+                        SELECT
+                            c.comune,
+                            COALESCE((ST_SummaryStats(ST_Clip(ST_Union(p.rast), c.geom, true))).sum, 0) AS total_population
+                        FROM
+                            raster_data.ghs_population p
+                        JOIN
+                            transformed_comuni c ON ST_Intersects(p.rast, c.geom)
+                        GROUP BY
+                            c.comune, c.geom
+                        HAVING COUNT(p.rast) > 0;
+                        """
 
         # Cold start run
         with Timer() as t:
@@ -94,11 +118,10 @@ def run_postgis_vector_raster_analysis(num_runs=100):
             })
 
     except Exception as e:
-        print(f"An error occurred during PostGIS test: {e}")
+        print(f"An error occurred during PostGIS test: {e}.")
     finally:
         if conn:
             conn.close()
-
 
 def run_python_vector_raster_analysis(vector_path, raster_path, num_runs=100):
     """
@@ -116,7 +139,6 @@ def run_python_vector_raster_analysis(vector_path, raster_path, num_runs=100):
 
     # Cold start run
     with Timer() as t:
-        # MODIFIED: Added nodata=-200, which is the standard for GHS-POP, to remove the warning.
         stats = zonal_stats(piedmont_gdf, str(raster_path), stats="sum", nodata=-200)
     cold_start_time = t.interval
     print(f"Cold start completed in {cold_start_time:.4f}s.")
