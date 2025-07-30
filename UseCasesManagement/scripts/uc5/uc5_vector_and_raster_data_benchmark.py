@@ -27,43 +27,69 @@ def run_postgis_vector_raster_analysis(num_runs=100):
     try:
         conn = psycopg2.connect(dbname='osm_benchmark_db', user='postgres', password='postgres', host='localhost', port='5432')
 
+        # First, let's check what columns are actually available in the table
+        check_columns_query = """
+                              SELECT column_name
+                              FROM information_schema.columns
+                              WHERE table_schema = 'vector_data'
+                                AND table_name = 'comuni_istat_clean'; \
+                              """
+
+        cursor = conn.cursor()
+        cursor.execute(check_columns_query)
+        columns = [row[0] for row in cursor.fetchall()]
+        cursor.close()
+
+        # Find the correct column names for municipality name and region code
+        # Common variations for Italian municipality data
+        comune_col = None
+        reg_col = None
+
+        # Priority order for municipality name
+        for col in ['COMUNE', 'COMUNE_A', 'NOME']:
+            if col in columns:
+                comune_col = col
+                break
+
+        # Priority order for region code
+        for col in ['COD_REG', 'COD_REGIONE']:
+            if col in columns:
+                reg_col = col
+                break
+
+        if not comune_col or not reg_col:
+            print(f"Could not find municipality or region columns. Available: {columns}")
+            return
+
+        print(f"Using columns municipality='{comune_col}' and region='{reg_col}'.")
+
         # This query calculates the sum of population for each municipality in Piedmont.
         # It joins the vector comuni_istat table with the raster ghs_population table.
+        # Using ST_ValueCount instead of ST_SummaryStats to avoid -inf issues
         query = f"""
-                WITH raster_srid AS (
-                    SELECT ST_SRID(rast) as srid FROM raster_data.ghs_population LIMIT 1
-                ),
-                comuni_clean AS (
-                    SELECT 
-                        comune,
-                        geom
-                    FROM vector_data.comuni_istat
-                    WHERE cod_reg = 1 
-                        AND geom IS NOT NULL
-                        AND ST_IsValid(geom)
-                        AND NOT ST_IsEmpty(geom)
-                        AND ST_XMin(geom) > -180 AND ST_XMax(geom) < 180
-                        AND ST_YMin(geom) > -90 AND ST_YMax(geom) < 90
-                ),
-                comuni_piemonte AS (
-                    SELECT 
-                        c.comune,
-                        CASE 
-                            WHEN ST_SRID(c.geom) = r.srid THEN c.geom
-                            ELSE ST_Transform(c.geom, r.srid)
-                        END as geom
-                    FROM comuni_clean c
-                    CROSS JOIN raster_srid r
-                )
                 SELECT
-                    c.comune,
-                    SUM(COALESCE((ST_SummaryStats(ST_Clip(p.rast, c.geom, true))).sum, 0)) AS total_population
+                    c."{comune_col}",
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN (pvc).value > 0 AND (pvc).value < 1e10 
+                                THEN (pvc).value * (pvc).count 
+                                ELSE 0 
+                            END
+                        ), 0
+                    ) AS total_population
                 FROM 
-                    comuni_piemonte c
-                JOIN raster_data.ghs_population p ON ST_Intersects(p.rast, c.geom)
+                    vector_data.comuni_istat_clean c
+                CROSS JOIN LATERAL (
+                    SELECT ST_ValueCount(ST_Clip(p.rast, c.geometry, true)) as pvc
+                    FROM raster_data.ghs_population p 
+                    WHERE ST_Intersects(p.rast, c.geometry)
+                ) AS subq
+                WHERE
+                    c."{reg_col}" = '{TARGET_REGION_CODE}'
+                    AND (pvc).value IS NOT NULL
                 GROUP BY
-                    c.comune
-                ORDER BY c.comune
+                    c."{comune_col}";
                 """
 
         # Cold start run
@@ -84,7 +110,7 @@ def run_postgis_vector_raster_analysis(num_runs=100):
             'use_case': '5. Vector-Raster Analysis (Vector Data & Raster Data)',
             'technology': 'PostGIS',
             'operation_description': 'Calculate Population per Municipality',
-            'test_dataset': 'comuni_istat and ghs_population tables',
+            'test_dataset': 'comuni_istat_clean and ghs_population tables',
             'execution_time_s': cold_start_time,
             'num_runs': 1,
             'output_size_mb': 'N/A',
@@ -102,7 +128,7 @@ def run_postgis_vector_raster_analysis(num_runs=100):
                     cursor.close()
                 hot_start_times.append(t.interval)
                 print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.4f}s.", end='\r')
-            print()
+            print("\n")
 
             avg_hot_time = sum(hot_start_times) / len(hot_start_times)
             print(f"Average hot start: {avg_hot_time:.4f}s over {len(hot_start_times)} runs.")
@@ -111,7 +137,7 @@ def run_postgis_vector_raster_analysis(num_runs=100):
                 'use_case': '5. Vector-Raster Analysis (Vector Data & Raster Data)',
                 'technology': 'PostGIS',
                 'operation_description': 'Calculate Population per Municipality',
-                'test_dataset': 'comuni_istat and ghs_population tables',
+                'test_dataset': 'comuni_istat_clean and ghs_population tables',
                 'execution_time_s': avg_hot_time,
                 'num_runs': len(hot_start_times),
                 'output_size_mb': 'N/A',
@@ -181,7 +207,7 @@ def run_python_vector_raster_analysis(vector_path, raster_path, num_runs=100):
             'execution_time_s': avg_hot_time,
             'num_runs': len(hot_start_times),
             'output_size_mb': 'N/A',
-            'notes': f'Total Population: {total_population:,.0f} in {len(stats)} municipalities.. Average of {len(hot_start_times)} hot cache runs.'
+            'notes': f'Total Population: {total_population:,.0f} in {len(stats)} municipalities. Average of {len(hot_start_times)} hot cache runs.'
         })
 
 if __name__ == '__main__':
