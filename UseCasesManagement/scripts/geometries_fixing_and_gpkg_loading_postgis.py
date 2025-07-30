@@ -25,20 +25,25 @@ DB_CONNECTION_URL = "postgresql://postgres:postgres@localhost:5432/osm_benchmark
 TABLE_NAME = 'comuni_istat_clean'
 
 try:
+    # Read the original shapefile containing municipal boundaries.
     print(f"Reading original shapefile.")
     gdf = gpd.read_file(VECTOR_INPUT_PATH)
     print(f"Read {len(gdf)} features.")
 
+    # Apply a zero-width buffer to fix any invalid geometries.
     print("Applying .buffer(0) to fix geometries.")
     gdf.geometry = gdf.geometry.buffer(0)
 
+    # Read the target raster file to extract its Coordinate Reference System (CRS).
     print("Reading target CRS from raster.")
     target_crs = rioxarray.open_rasterio(RASTER_INPUT_PATH).rio.crs
 
+    # Reproject the vector GeoDataFrame to the raster's CRS to ensure alignment.
     print(f"Reprojecting {len(gdf)} features to target CRS.")
     gdf_reprojected = gdf.to_crs(target_crs)
     print("Reprojection complete.")
 
+    # Save the cleaned and reprojected GeoDataFrame to a GeoPackage file.
     print(f"Saving clean data to: {VECTOR_OUTPUT_PATH.name}.")
     VECTOR_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     gdf_reprojected.to_file(VECTOR_OUTPUT_PATH, driver='GPKG')
@@ -48,10 +53,12 @@ try:
 
     print("\nStarting Data Loading into PostGIS.")
 
+    # Create a connection engine to the database using the defined URL.
     print(f"Connecting to the database.")
     engine = create_engine(DB_CONNECTION_URL)
 
-    print(f"Loading {len(gdf_reprojected)} clean features into table 'vector_data.{TABLE_NAME}'...")
+    # Load the reprojected GeoDataFrame into a new table in the PostGIS database.
+    print(f"Loading {len(gdf_reprojected)} clean features into table 'vector_data.{TABLE_NAME}'.")
     with Timer() as t:
         gdf_reprojected.to_postgis(
             name=TABLE_NAME,
