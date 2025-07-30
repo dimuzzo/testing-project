@@ -65,7 +65,7 @@ def run_postgis_vector_raster_analysis(num_runs=100):
 
         # This query calculates the sum of population for each municipality in Piedmont.
         # It joins the vector comuni_istat table with the raster ghs_population table.
-        # Using ST_ValueCount instead of ST_SummaryStats to avoid -inf issues
+        # Using ST_ValueCount (PVC - Pixel Value Count) instead of ST_SummaryStats to avoid -inf issues
         query = f"""
                 SELECT
                     c."{comune_col}",
