@@ -25,17 +25,19 @@ def run_duckdb_complex_spatial_join(city_name, num_runs=100, **file_paths):
             'name': '4.1. Restaurants per Neighborhood',
             'required_files': ['neighborhoods_file', 'restaurants_file'],
             'query': """
-                     SELECT n.tags['name']       AS neighborhood_name,
+                     SELECT n.feature_id         AS neighborhood_id,
                             COUNT(r.feature_id)  AS restaurant_count,
                             ST_AsWKB(n.geometry) AS geom_wkb
-                     FROM read_parquet('{neighborhoods_file}') AS n
+                     FROM (SELECT *
+                           FROM read_parquet('{neighborhoods_file}')
+                           WHERE ST_GeometryType(geometry) IN ('POLYGON', 'MULTIPOLYGON')) AS n
                               LEFT JOIN read_parquet('{restaurants_file}') AS r ON ST_Within(r.geometry, n.geometry)
-                     GROUP BY n.tags['name'], n.geometry;
+                     GROUP BY n.feature_id, n.geometry;
                      """
         },
         {
             'id': '4.2',
-            'name': '4.2. Analysis Near Hospitals',
+            'name': '4.2. Tree Count and Length Sum of Residential Roads Near Hospitals',
             'required_files': ['hospitals_file', 'residential_streets_file', 'trees_file'],
             'query': """
                      WITH streets_near_hospitals AS (SELECT DISTINCT s.feature_id, s.geometry
