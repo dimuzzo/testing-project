@@ -184,31 +184,28 @@ if __name__ == '__main__':
 
     datasets_by_city = {
         'Pinerolo': {
-            f: PROCESSED_DATA_DIR / f"pinerolo_{f}.geoparquet" for f in
-                     ['neighborhoods',
-                      'restaurants',
-                      'hospitals',
-                      'residential_streets',
-                      'trees',
-                      'parks']
+            'neighborhoods': PROCESSED_DATA_DIR / 'pinerolo_neighborhoods.geoparquet',  #
+            'parks': PROCESSED_DATA_DIR / 'pinerolo_parks.geoparquet',
+            'restaurants': PROCESSED_DATA_DIR / 'pinerolo_restaurants.geoparquet',
+            'hospitals': PROCESSED_DATA_DIR / 'pinerolo_hospitals.geoparquet',
+            'residential_streets': PROCESSED_DATA_DIR / 'pinerolo_residential_streets.geoparquet',
+            'trees': PROCESSED_DATA_DIR / 'pinerolo_trees.geoparquet'
         },
         'Milan': {
-            f: PROCESSED_DATA_DIR / f"milan_{f}.geoparquet" for f in
-                  ['neighborhoods',
-                   'restaurants',
-                   'hospitals',
-                   'residential_streets',
-                   'trees',
-                   'parks']
+            'neighborhoods': PROCESSED_DATA_DIR / 'milan_neighborhoods.geoparquet',
+            'parks': PROCESSED_DATA_DIR / 'milan_parks.geoparquet',
+            'restaurants': PROCESSED_DATA_DIR / 'milan_restaurants.geoparquet',
+            'hospitals': PROCESSED_DATA_DIR / 'milan_hospitals.geoparquet',
+            'residential_streets': PROCESSED_DATA_DIR / 'milan_residential_streets.geoparquet',
+            'trees': PROCESSED_DATA_DIR / 'milan_trees.geoparquet'
         },
         'Rome': {
-            f: PROCESSED_DATA_DIR / f"rome_{f}.geoparquet" for f in
-                 ['neighborhoods',
-                  'restaurants',
-                  'hospitals',
-                  'residential_streets',
-                  'trees',
-                  'parks']
+            'neighborhoods': PROCESSED_DATA_DIR / 'rome_neighborhoods.geoparquet',
+            'parks': PROCESSED_DATA_DIR / 'rome_parks.geoparquet',
+            'restaurants': PROCESSED_DATA_DIR / 'rome_restaurants.geoparquet',
+            'hospitals': PROCESSED_DATA_DIR / 'rome_hospitals.geoparquet',
+            'residential_streets': PROCESSED_DATA_DIR / 'rome_residential_streets.geoparquet',
+            'trees': PROCESSED_DATA_DIR / 'rome_trees.geoparquet'
         }
     }
 
@@ -227,7 +224,7 @@ if __name__ == '__main__':
         else:
             print(f"\nERROR: Files for {city} not found. Skipping complex spatial join tests.")
 
-        # Run Op 4.2: Analysis Near Hospitals
+        # Run Op 4.2: Tree Count and Length Sum of Residential Roads Near Hospitals
         if paths['hospitals'].exists() and paths['residential_streets'].exists() and paths['trees'].exists():
             run_duckdb_complex_spatial_join(
                 city_name=city, num_runs=NUMBER_OF_RUNS,
