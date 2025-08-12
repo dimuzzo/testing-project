@@ -17,19 +17,17 @@ WORKING_ROOT = CURRENT_SCRIPT_PATH.parent.parent
 PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
 
 # List of files to load
-files_to_load = [
-    # Pinerolo
-    'pinerolo_buildings.geoparquet',
-    'pinerolo_restaurants.geoparquet',
-    'pinerolo_bus_stops.geoparquet',
-    # Milan
-    'milan_buildings.geoparquet',
-    'milan_restaurants.geoparquet',
-    'milan_bus_stops.geoparquet',
-    # Rome
-    'rome_buildings.geoparquet',
-    'rome_restaurants.geoparquet',
-    'rome_bus_stops.geoparquet'
+cities = ['pinerolo', 'milan', 'rome']
+
+features_to_load = [
+    'buildings',
+    'restaurants',
+    'bus_stops',
+    'neighborhoods',
+    'parks',
+    'hospitals',
+    'residential_streets',
+    'trees'
 ]
 
 def main():
@@ -41,38 +39,40 @@ def main():
     engine = create_engine(DB_CONNECTION_URL)
 
     with Timer() as total_timer:
-        for filename in files_to_load:
-            file_path = PROCESSED_DATA_DIR / filename
-            # Table name is derived from the filename (e.g., "pinerolo_buildings")
-            table_name = file_path.stem
+        # Iterates through each city and feature type to load the data.
+        for city in cities:
+            for feature in features_to_load:
+                input_filename = f"{city}_{feature}.geoparquet"
+                table_name = f"{city}_{feature}"  # The table will be named like 'milan_parks'
+                input_filepath = PROCESSED_DATA_DIR / input_filename
 
-            if not file_path.exists():
-                print(f"WARNING: File not found, skipping {filename}.")
-                continue
+                if not input_filepath.exists():
+                    print(f"WARNING: File not found, skipping {input_filename}.")
+                    continue
 
-            print(f"\nLoading {filename} into the table {table_name}.")
+                print(f"\nLoading {input_filename} into the table {table_name}.")
 
-            try:
-                # Read the GeoParquet file
-                gdf = gpd.read_parquet(file_path)
-                gdf.crs = "EPSG:4326"
+                try:
+                    # Read the GeoParquet file
+                    gdf = gpd.read_parquet(input_filepath)
+                    gdf.crs = "EPSG:4326"
 
-                with Timer() as t:
-                    # Write the GeoDataFrame to PostGIS
-                    # 'if_exists="replace"' will drop the table if it already exists and create a new one.
-                    # A spatial index is created automatically on the 'geometry' column.
-                    gdf.to_postgis(
-                        name=table_name,
-                        con=engine,
-                        if_exists="replace",
-                        index=True,
-                        index_label="id", # Use a specific name for the primary key
-                    )
+                    with Timer() as t:
+                        # Write the GeoDataFrame to PostGIS
+                        # 'if_exists="replace"' will drop the table if it already exists and create a new one.
+                        # A spatial index is created automatically on the 'geometry' column.
+                        gdf.to_postgis(
+                            name=table_name,
+                            con=engine,
+                            if_exists="replace",
+                            index=True,
+                            index_label="id", # Use a specific name for the primary key
+                        )
 
-                print(f"Successfully loaded {len(gdf)} features into {table_name} in {t.interval:.2f} seconds.")
+                    print(f"Successfully loaded {len(gdf)} features into {table_name} in {t.interval:.2f} seconds.")
 
-            except Exception as e:
-                print(f"ERROR: Failed to load {filename}. Reason: {e}.")
+                except Exception as e:
+                    print(f"ERROR: Failed to load {input_filename}. Reason: {e}.")
 
     print(f"\nData loading process complete. Total time: {total_timer.interval:.2f} seconds.")
 
