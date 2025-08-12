@@ -57,7 +57,7 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
                 (not op['requires_secondary_file'] and secondary_file_path):
             continue
 
-        print(f"\nRunning Operation '{op['name']}'.")
+        print(f"\nRunning Operation '{op['name']}' for {city_name.title()}.")
 
         dataset_name = f"{city_name.lower()}_restaurants_bus_stops.geoparquet" if op[
             'requires_secondary_file'] else main_file_path.name
