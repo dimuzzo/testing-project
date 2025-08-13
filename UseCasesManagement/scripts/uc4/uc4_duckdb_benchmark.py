@@ -2,6 +2,7 @@ import duckdb
 from pathlib import Path
 import sys
 import geopandas as gpd
+import osmnx as ox
 
 # Add the parent directory of 'scripts' to the Python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -15,6 +16,7 @@ PROCESSED_DATA_DIR = WORKING_ROOT / 'data' / 'processed'
 def run_duckdb_complex_spatial_join(city_name, num_runs=100, **file_paths):
     """
     Runs selected Use Case 4 benchmarks for DuckDB on a given city's datasets.
+    Handles operations with a variable number of input files via **file_paths.
     """
     metric_crs = 'EPSG:32632' # WGS 84 / UTM zone 32N for metric calculations
 
@@ -61,18 +63,18 @@ def run_duckdb_complex_spatial_join(city_name, num_runs=100, **file_paths):
         {
             'id': '4.3',
             'name': '4.3. Area Not Covered by Parks',
-            'required_files': ['neighborhoods_file', 'parks_file'],
+            'required_files': ['parks_file', 'city_boundary_wkt'],
             'query': """
-                     WITH city_area AS (SELECT ST_Union_Agg(geometry) AS geom
-                                        FROM read_parquet('{neighborhoods_file}')
-                                        WHERE ST_GeometryType(geometry) IN ('POLYGON', 'MULTIPOLYGON')),
-                          parks_area AS (SELECT ST_Union_Agg(geometry) AS geom
+                     WITH parks_area AS (SELECT ST_Union_Agg(geometry) AS geom
                                          FROM read_parquet('{parks_file}')
                                          WHERE ST_GeometryType(geometry) IN ('POLYGON', 'MULTIPOLYGON'))
-                     SELECT ST_Area(ST_Difference(
-                             ST_Transform((SELECT geom FROM city_area), 'EPSG:4326', '{metric_crs}'),
-                             ST_Transform((SELECT geom FROM parks_area), 'EPSG:4326',
-                                          '{metric_crs}'))) AS non_park_area_sqm;
+                     SELECT ST_Area(
+                                    ST_Difference(
+                                            ST_Transform(ST_GeomFromText('{city_boundary_wkt}'), 'EPSG:4326',
+                                                         '{metric_crs}'),
+                                        ST_Transform((SELECT geom FROM parks_area), 'EPSG:4326', '{metric_crs}')
+                                    )
+                            ) AS non_park_area_sqm;
                      """
         }
     ]
@@ -88,9 +90,8 @@ def run_duckdb_complex_spatial_join(city_name, num_runs=100, **file_paths):
         print(f"\nRunning Operation '{op['name']}' for {city_name.title()}.")
 
         # Dynamically create the dataset name for logging
-        dataset_name = f"{city_name.lower()}_{'_'.join(f.replace('_file', '') for f in required)}.geoparquet"
-
-        formatted_paths = {key: str(path).replace('\\', '/') for key, path in file_paths.items()}
+        dataset_name = f"{city_name.lower()}_{'_'.join(f.replace('_file', '').replace('_wkt', '') for f in required)}.geoparquet"
+        formatted_paths = {key: str(path).replace('\\', '/') if isinstance(path, Path) else path for key, path in file_paths.items()}
         sql_query = op['query'].format(metric_crs=metric_crs, **formatted_paths)
 
         # Cold start run
@@ -178,7 +179,6 @@ def run_duckdb_complex_spatial_join(city_name, num_runs=100, **file_paths):
 
     con.close()
 
-
 if __name__ == '__main__':
     NUMBER_OF_RUNS = 100
 
@@ -211,6 +211,16 @@ if __name__ == '__main__':
 
     # Loop through each city and run the appropriate benchmarks
     for city, paths in datasets_by_city.items():
+        print(f"Fetching authoritative boundary for {city}.")
+        try:
+            city_boundary_gdf = ox.geocode_to_gdf(f"{city}, Italy")
+            city_boundary_gdf = city_boundary_gdf.to_crs("EPSG:4326")
+            city_boundary_wkt = city_boundary_gdf.geometry.iloc[0].wkt
+            print("Boundary fetched successfully.")
+        except Exception as e:
+            print(f"Could not fetch boundary for {city}. Skipping tests that require it. Error: {e}.")
+            city_boundary_wkt = None
+
         # Print header only once per city
         print(f"\nTesting DuckDB Complex Spatial Join Operations for: {city.upper()}.")
 
@@ -236,11 +246,11 @@ if __name__ == '__main__':
             print(f"\nERROR: Files for {city} not found. Skipping complex spatial join tests.")
 
         # Run Op 4.3: Area Not Covered by Parks
-        if paths['neighborhoods'].exists() and paths['parks'].exists():
+        if paths['parks'].exists() and city_boundary_wkt:
             run_duckdb_complex_spatial_join(
                 city_name=city, num_runs=NUMBER_OF_RUNS,
-                neighborhoods_file=paths['neighborhoods'],
-                parks_file=paths['parks']
+                parks_file=paths['parks'],
+                city_boundary_wkt=city_boundary_wkt
             )
         else:
             print(f"\nERROR: Files for {city} not found. Skipping complex spatial join tests.")
