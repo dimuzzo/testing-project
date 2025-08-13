@@ -116,7 +116,7 @@ def run_postgis_single_table_analysis(city_name, buildings_table, restaurants_ta
                 })
 
     except Exception as e:
-        print(f"An error occurred during PostGIS benchmark: {e}")
+        print(f"An error occurred during PostGIS benchmark: {e}.")
     finally:
         if conn:
             conn.close()
@@ -147,6 +147,7 @@ if __name__ == '__main__':
         # Print header only once per city
         print(f"\nTesting PostGIS Single Table Analysis Operations for: {city.upper()}.")
 
+        # Run all the Operations at once
         run_postgis_single_table_analysis(
             city_name=city,
             buildings_table=tables['buildings'],

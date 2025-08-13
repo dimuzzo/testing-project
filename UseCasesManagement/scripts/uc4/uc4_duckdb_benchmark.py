@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
     datasets_by_city = {
         'Pinerolo': {
-            'neighborhoods': PROCESSED_DATA_DIR / 'pinerolo_neighborhoods.geoparquet',  #
+            'neighborhoods': PROCESSED_DATA_DIR / 'pinerolo_neighborhoods.geoparquet',
             'parks': PROCESSED_DATA_DIR / 'pinerolo_parks.geoparquet',
             'restaurants': PROCESSED_DATA_DIR / 'pinerolo_restaurants.geoparquet',
             'hospitals': PROCESSED_DATA_DIR / 'pinerolo_hospitals.geoparquet',
