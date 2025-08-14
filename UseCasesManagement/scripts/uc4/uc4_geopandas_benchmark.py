@@ -43,7 +43,7 @@ def run_geopandas_complex_spatial_join(city_name, num_runs=100, **file_paths):
         joined = gpd.sjoin(gdf_restaurants, polygons, how="right", predicate="within")
 
         # Group by the neighborhood index and count the restaurants
-        restaurant_counts = joined.groupby(joined.index_right).size()
+        restaurant_counts = joined.groupby(joined.index).size()
 
         # Create the final result dataframe
         result_gdf = polygons.join(restaurant_counts.rename('restaurant_count')).fillna(0)
@@ -134,7 +134,7 @@ def run_geopandas_complex_spatial_join(city_name, num_runs=100, **file_paths):
 
         # Print a preview
         print("Result Preview:")
-        print(result_df.head().to_string())
+        print(result_df.drop(columns=['geometry'], errors='ignore').head().to_string())
 
         # Initialize output size as N/A
         output_size_mb = 'N/A'
@@ -208,28 +208,28 @@ if __name__ == '__main__':
 
     datasets_by_city = {
         'Pinerolo': {
-            'neighborhoods': PROCESSED_DATA_DIR / 'pinerolo_neighborhoods.geoparquet',
-            'parks': PROCESSED_DATA_DIR / 'pinerolo_parks.geoparquet',
-            'restaurants': PROCESSED_DATA_DIR / 'pinerolo_restaurants.geoparquet',
-            'hospitals': PROCESSED_DATA_DIR / 'pinerolo_hospitals.geoparquet',
-            'residential_streets': PROCESSED_DATA_DIR / 'pinerolo_residential_streets.geoparquet',
-            'trees': PROCESSED_DATA_DIR / 'pinerolo_trees.geoparquet'
+            'neighborhoods_file': PROCESSED_DATA_DIR / 'pinerolo_neighborhoods.geoparquet',
+            'parks_file': PROCESSED_DATA_DIR / 'pinerolo_parks.geoparquet',
+            'restaurants_file': PROCESSED_DATA_DIR / 'pinerolo_restaurants.geoparquet',
+            'hospitals_file': PROCESSED_DATA_DIR / 'pinerolo_hospitals.geoparquet',
+            'residential_streets_file': PROCESSED_DATA_DIR / 'pinerolo_residential_streets.geoparquet',
+            'trees_file': PROCESSED_DATA_DIR / 'pinerolo_trees.geoparquet'
         },
         'Milan': {
-            'neighborhoods': PROCESSED_DATA_DIR / 'milan_neighborhoods.geoparquet',
-            'parks': PROCESSED_DATA_DIR / 'milan_parks.geoparquet',
-            'restaurants': PROCESSED_DATA_DIR / 'milan_restaurants.geoparquet',
-            'hospitals': PROCESSED_DATA_DIR / 'milan_hospitals.geoparquet',
-            'residential_streets': PROCESSED_DATA_DIR / 'milan_residential_streets.geoparquet',
-            'trees': PROCESSED_DATA_DIR / 'milan_trees.geoparquet'
+            'neighborhoods_file': PROCESSED_DATA_DIR / 'milan_neighborhoods.geoparquet',
+            'parks_file': PROCESSED_DATA_DIR / 'milan_parks.geoparquet',
+            'restaurants_file': PROCESSED_DATA_DIR / 'milan_restaurants.geoparquet',
+            'hospitals_file': PROCESSED_DATA_DIR / 'milan_hospitals.geoparquet',
+            'residential_streets_file': PROCESSED_DATA_DIR / 'milan_residential_streets.geoparquet',
+            'trees_file': PROCESSED_DATA_DIR / 'milan_trees.geoparquet'
         },
         'Rome': {
-            'neighborhoods': PROCESSED_DATA_DIR / 'rome_neighborhoods.geoparquet',
-            'parks': PROCESSED_DATA_DIR / 'rome_parks.geoparquet',
-            'restaurants': PROCESSED_DATA_DIR / 'rome_restaurants.geoparquet',
-            'hospitals': PROCESSED_DATA_DIR / 'rome_hospitals.geoparquet',
-            'residential_streets': PROCESSED_DATA_DIR / 'rome_residential_streets.geoparquet',
-            'trees': PROCESSED_DATA_DIR / 'rome_trees.geoparquet'
+            'neighborhoods_file': PROCESSED_DATA_DIR / 'rome_neighborhoods.geoparquet',
+            'parks_file': PROCESSED_DATA_DIR / 'rome_parks.geoparquet',
+            'restaurants_file': PROCESSED_DATA_DIR / 'rome_restaurants.geoparquet',
+            'hospitals_file': PROCESSED_DATA_DIR / 'rome_hospitals.geoparquet',
+            'residential_streets_file': PROCESSED_DATA_DIR / 'rome_residential_streets.geoparquet',
+            'trees_file': PROCESSED_DATA_DIR / 'rome_trees.geoparquet'
         }
     }
 
