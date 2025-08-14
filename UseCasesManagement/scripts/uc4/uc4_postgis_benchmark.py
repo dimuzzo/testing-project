@@ -80,6 +80,7 @@ def run_postgis_complex_spatial_join(city_name, num_runs=100, **kwargs):
     engine = create_engine(DB_CONNECTION_URL)
     with engine.connect() as conn:
         for op in operations:
+            # Check if the operation can be run
             required = op['required_tables']
             if not all(key in kwargs for key in required):
                 continue

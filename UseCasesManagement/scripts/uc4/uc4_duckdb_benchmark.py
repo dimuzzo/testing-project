@@ -83,6 +83,7 @@ def run_duckdb_complex_spatial_join(city_name, num_runs=100, **file_paths):
     con.execute("INSTALL spatial; LOAD spatial;")
 
     for op in operations:
+        # Check if the operation can be run
         required = op['required_files']
         if not all(key in file_paths for key in required):
             continue
