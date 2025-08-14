@@ -117,3 +117,21 @@ use_case,technology,operation_description,test_dataset,avg_execution_time_s,num_
 4. Complex Spatial Join (OSM Data),PostGIS,4.2. Tree Count and Length Sum of Residential Roads Near Hospitals,rome_hospitals_residential_streets_trees,186.79594548888917,99,N/A,"Trees: 441, Street Length: 103,144.79m. Avg of 99 hot runs."
 4. Complex Spatial Join (OSM Data),PostGIS,4.3. Area Not Covered by Parks,rome_parks_city_boundary,0.24839549999887822,1,N/A,"Non-park area: 1,234,980,710.40 sqm. Cold start."
 4. Complex Spatial Join (OSM Data),PostGIS,4.3. Area Not Covered by Parks,rome_parks_city_boundary,0.23598786060646296,99,N/A,"Non-park area: 1,234,980,710.40 sqm. Avg of 99 hot runs."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.1. Restaurants per Neighborhood,pinerolo_neighborhoods_restaurants,0.006369499999891559,1,0.1218,Found 13 results. Cold start (first run).
+4. Complex Spatial Join (OSM Data),GeoPandas,4.1. Restaurants per Neighborhood,pinerolo_neighborhoods_restaurants,0.004997308080768415,99,0.1218,Found 13 results. Average of 99 hot cache runs.
+4. Complex Spatial Join (OSM Data),GeoPandas,4.2. Tree Count and Length Sum of Residential Roads Near Hospitals,pinerolo_hospitals_residential_streets_trees,0.014642199999798322,1,N/A,"Trees: 0, Street Length: 4,997.96m. Cold start."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.2. Tree Count and Length Sum of Residential Roads Near Hospitals,pinerolo_hospitals_residential_streets_trees,0.00788268888879769,99,N/A,"Trees: 0, Street Length: 4,997.96m. Avg of 99 hot runs."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.3. Area Not Covered by Parks,pinerolo_parks_city_boundary,0.00539550000030431,1,N/A,"Non-park area: 49,969,424.98 sqm. Cold start."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.3. Area Not Covered by Parks,pinerolo_parks_city_boundary,0.004909415151520777,99,N/A,"Non-park area: 49,969,424.98 sqm. Avg of 99 hot runs."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.1. Restaurants per Neighborhood,milan_neighborhoods_restaurants,0.010267399999975169,1,0.2842,Found 34 results. Cold start (first run).
+4. Complex Spatial Join (OSM Data),GeoPandas,4.1. Restaurants per Neighborhood,milan_neighborhoods_restaurants,0.009200106060656842,99,0.2842,Found 34 results. Average of 99 hot cache runs.
+4. Complex Spatial Join (OSM Data),GeoPandas,4.2. Tree Count and Length Sum of Residential Roads Near Hospitals,milan_hospitals_residential_streets_trees,0.07894959999975981,1,N/A,"Trees: 234, Street Length: 25,087.89m. Cold start."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.2. Tree Count and Length Sum of Residential Roads Near Hospitals,milan_hospitals_residential_streets_trees,0.08180811414141234,99,N/A,"Trees: 234, Street Length: 25,087.89m. Avg of 99 hot runs."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.3. Area Not Covered by Parks,milan_parks_city_boundary,0.4298737999997684,1,N/A,"Non-park area: 162,977,688.70 sqm. Cold start."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.3. Area Not Covered by Parks,milan_parks_city_boundary,0.42307190202019695,99,N/A,"Non-park area: 162,977,688.70 sqm. Avg of 99 hot runs."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.1. Restaurants per Neighborhood,rome_neighborhoods_restaurants,0.03388560000075813,1,2.2327,Found 52 results. Cold start (first run).
+4. Complex Spatial Join (OSM Data),GeoPandas,4.1. Restaurants per Neighborhood,rome_neighborhoods_restaurants,0.031467987878762996,99,2.2327,Found 52 results. Average of 99 hot cache runs.
+4. Complex Spatial Join (OSM Data),GeoPandas,4.2. Tree Count and Length Sum of Residential Roads Near Hospitals,rome_hospitals_residential_streets_trees,0.1891795000001366,1,N/A,"Trees: 441, Street Length: 103,312.22m. Cold start."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.2. Tree Count and Length Sum of Residential Roads Near Hospitals,rome_hospitals_residential_streets_trees,0.18557428787877106,99,N/A,"Trees: 441, Street Length: 103,312.22m. Avg of 99 hot runs."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.3. Area Not Covered by Parks,rome_parks_city_boundary,0.7815077000004749,1,N/A,"Non-park area: 1,234,980,710.39 sqm. Cold start."
+4. Complex Spatial Join (OSM Data),GeoPandas,4.3. Area Not Covered by Parks,rome_parks_city_boundary,0.7841841707070882,99,N/A,"Non-park area: 1,234,980,710.39 sqm. Avg of 99 hot runs."
