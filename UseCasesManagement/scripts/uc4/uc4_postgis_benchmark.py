@@ -1,18 +1,22 @@
 import geopandas as gpd
 from pathlib import Path
 import sys
-import psycopg2
+from sqlalchemy import create_engine
 import osmnx as ox
+import pandas as pd
 
 # Add the parent directory of 'scripts' to the Python path to find 'utils'
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from benchmark_utils import Timer, save_results
 
+# DB Setup
+DB_CONNECTION_URL = "postgresql://postgres:postgres@localhost:5432/osm_benchmark_db"
+
 def run_postgis_complex_spatial_join(city_name, num_runs=100, **kwargs):
     """
     Runs selected Use Case 4 benchmarks for PostGIS on a given city's datasets.
     """
-    metric_srid = 32632  # WGS 84 / UTM zone 32N for metric calculations
+    metric_srid = 32632 # WGS 84 / UTM zone 32N for metric calculations
 
     # List of the 3 selected operations for the benchmark.
     operations = [
@@ -20,35 +24,37 @@ def run_postgis_complex_spatial_join(city_name, num_runs=100, **kwargs):
             'id': '4.1',
             'name': '4.1. Restaurants per Neighborhood',
             'required_tables': ['neighborhoods_table', 'restaurants_table'],
+            'returns_geometry': True,
             'query': """
-                     SELECT n.feature_id AS neighborhood_id, COUNT(r.feature_id) AS restaurant_count, n.geom
+                     SELECT n.id AS neighborhood_id, COUNT(r.id) AS restaurant_count, n.geometry
                      FROM "{neighborhoods_table}" AS n
-                              LEFT JOIN "{restaurants_table}" AS r ON ST_Within(r.geom, n.geom)
-                     WHERE ST_GeometryType(n.geom) IN ('ST_Polygon', 'ST_MultiPolygon')
-                     GROUP BY n.feature_id, n.geom;
+                              LEFT JOIN "{restaurants_table}" AS r ON ST_Within(r.geometry, n.geometry)
+                     WHERE ST_GeometryType(n.geometry) IN ('ST_Polygon', 'ST_MultiPolygon')
+                     GROUP BY n.id, n.geometry;
                      """
         },
         {
             'id': '4.2',
             'name': '4.2. Tree Count and Length Sum of Residential Roads Near Hospitals',
             'required_tables': ['hospitals_table', 'residential_streets_table', 'trees_table'],
+            'returns_geometry': False,
             'query': """
-                     WITH streets_near_hospitals AS (SELECT DISTINCT s.feature_id, s.geom
+                     WITH streets_near_hospitals AS (SELECT DISTINCT s.id, s.geometry
                                                      FROM "{residential_streets_table}" AS s,
                                                           "{hospitals_table}" AS h
                                                      WHERE ST_DWithin(
-                                                                   ST_Transform(s.geom, 4326, {metric_crs}),
-                                                                   ST_Transform(h.geom, 4326, {metric_crs}),
+                                                                   ST_Transform(s.geometry, {metric_srid}),
+                                                                   ST_Transform(h.geometry, {metric_srid}),
                                                                    100.0)),
-                          trees_near_streets AS (SELECT DISTINCT t.feature_id
+                          trees_near_streets AS (SELECT DISTINCT t.id
                                                  FROM "{trees_table}" AS t,
                                                       streets_near_hospitals AS snh
                                                  WHERE ST_DWithin(
-                                                               ST_Transform(t.geom, 4326, {metric_crs}),
-                                                               ST_Transform(snh.geom, 4326, {metric_crs}),
+                                                               ST_Transform(t.geometry, {metric_srid}),
+                                                               ST_Transform(snh.geometry, {metric_srid}),
                                                                20.0))
                      SELECT (SELECT COUNT(*) FROM trees_near_streets) AS total_tree_count,
-                            (SELECT SUM(ST_Length(ST_Transform(geom, 4326, {metric_crs})))
+                            (SELECT SUM(ST_Length(ST_Transform(geometry, {metric_srid})))
                              FROM streets_near_hospitals)             AS total_street_length_m;
                      """
         },
@@ -56,24 +62,23 @@ def run_postgis_complex_spatial_join(city_name, num_runs=100, **kwargs):
             'id': '4.3',
             'name': '4.3. Area Not Covered by Parks',
             'required_tables': ['parks_table', 'city_boundary_wkt'],
+            'returns_geometry': False,
             'query': """
-                     WITH parks_area AS (SELECT ST_Union(geom) AS geom
+                     WITH parks_area AS (SELECT ST_Union(geometry) AS geom
                                          FROM "{parks_table}"
-                                         WHERE ST_GeometryType(geom) IN ('ST_Polygon', 'ST_MultiPolygon'))
+                                         WHERE ST_GeometryType(geometry) IN ('ST_Polygon', 'ST_MultiPolygon'))
                      SELECT ST_Area(
                                     ST_Difference(
-                                            ST_Transform(ST_SetSRID(ST_GeomFromText('{city_boundary_wkt}'), 4326), {metric_crs}),
-                                            ST_Transform((SELECT geom FROM parks_area), 4326, {metric_crs})
+                                            ST_Transform(ST_SetSRID(ST_GeomFromText('{city_boundary_wkt}'), 4326), {metric_srid}),
+                                            ST_Transform((SELECT geom FROM parks_area), {metric_srid})
                                     )
                             ) AS non_park_area_sqm;
                      """
         }
     ]
 
-    conn = None
-    try:
-        conn = psycopg2.connect(dbname='osm_benchmark_db', user='postgres', password='postgres', host='localhost', port='5432')
-
+    engine = create_engine(DB_CONNECTION_URL)
+    with engine.connect() as conn:
         for op in operations:
             required = op['required_tables']
             if not all(key in kwargs for key in required):
@@ -87,17 +92,25 @@ def run_postgis_complex_spatial_join(city_name, num_runs=100, **kwargs):
             # NOTE: Not using f-strings for table names to prevent SQL injection risks,
             # even though in this controlled environment it's safe. It's good practice.
             query_params = {key: val for key, val in kwargs.items()}
-            query_params['metric_crs'] = metric_srid
+            query_params['metric_srid'] = metric_srid
             sql_query = op['query'].format(**query_params)
 
+            # Differentiated execution logic
+            def execute_query(connection):
+                if op['returns_geometry']:
+                    return gpd.read_postgis(sql_query, connection, geom_col='geometry')
+                else:
+                    # Using pandas for query which don't return geometries
+                    return pd.read_sql(sql_query, connection)
+                
             # Cold run
             with Timer() as t:
-                result_df = gpd.read_postgis(sql_query, conn, geom_col='geom' if 'geom' in sql_query else None)
+                result_df = execute_query(conn)
             cold_start_time = t.interval
             print(f"Cold start completed in {cold_start_time:.6f}s.")
 
             print("Result Preview:")
-            print(result_df.drop(columns=['geom'], errors='ignore').head().to_string())
+            print(result_df.drop(columns=['geometry'], errors='ignore').head().to_string())
 
             # Custom notes logic
             if op['id'] == '4.2':
@@ -130,7 +143,7 @@ def run_postgis_complex_spatial_join(city_name, num_runs=100, **kwargs):
             if num_runs > 1:
                 for i in range(num_runs - 1):
                     with Timer() as t:
-                        _ = gpd.read_postgis(sql_query, conn, geom_col='geom' if 'geom' in sql_query else None)
+                        _ = execute_query(conn)
                     hot_start_times.append(t.interval)
                     print(f"Run {i + 2}/{num_runs} (Hot) completed in {t.interval:.6f}s.", end='\r')
                 print("\n")
@@ -151,11 +164,7 @@ def run_postgis_complex_spatial_join(city_name, num_runs=100, **kwargs):
                     'notes': hot_notes
                 })
 
-    except Exception as e:
-        print(f"An error occurred during PostGIS benchmark: {e}.")
-    finally:
-        if conn:
-            conn.close()
+        conn.close()
 
 if __name__ == '__main__':
     NUMBER_OF_RUNS = 100
@@ -163,28 +172,28 @@ if __name__ == '__main__':
     # Define all the datasets' tables needed for the benchmarks
     datasets_by_city = {
         'Pinerolo': {
-            'neighborhoods': 'pinerolo_neighborhoods',
-            'restaurants': 'pinerolo_restaurants',
-            'hospitals': 'pinerolo_hospitals',
-            'residential_streets': 'pinerolo_residential_streets',
-            'trees': 'pinerolo_trees',
-            'parks': 'pinerolo_parks'
+            'neighborhoods_table': 'pinerolo_neighborhoods',
+            'restaurants_table': 'pinerolo_restaurants',
+            'hospitals_table': 'pinerolo_hospitals',
+            'residential_streets_table': 'pinerolo_residential_streets',
+            'trees_table': 'pinerolo_trees',
+            'parks_table': 'pinerolo_parks'
         },
         'Milan': {
-            'neighborhoods': 'milan_neighborhoods',
-            'restaurants': 'milan_restaurants',
-            'hospitals': 'milan_hospitals',
-            'residential_streets': 'milan_residential_streets',
-            'trees': 'milan_trees',
-            'parks': 'milan_parks'
+            'neighborhoods_table': 'milan_neighborhoods',
+            'restaurants_table': 'milan_restaurants',
+            'hospitals_table': 'milan_hospitals',
+            'residential_streets_table': 'milan_residential_streets',
+            'trees_table': 'milan_trees',
+            'parks_table': 'milan_parks'
         },
         'Rome': {
-            'neighborhoods': 'rome_neighborhoods',
-            'restaurants': 'rome_restaurants',
-            'hospitals': 'rome_hospitals',
-            'residential_streets': 'rome_residential_streets',
-            'trees': 'rome_trees',
-            'parks': 'rome_parks'
+            'neighborhoods_table': 'rome_neighborhoods',
+            'restaurants_table': 'rome_restaurants',
+            'hospitals_table': 'rome_hospitals',
+            'residential_streets_table': 'rome_residential_streets',
+            'trees_table': 'rome_trees',
+            'parks_table': 'rome_parks'
         }
     }
 
