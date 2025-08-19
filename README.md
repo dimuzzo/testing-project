@@ -135,7 +135,7 @@ The first part of this repository contains the Jupyter Notebooks for each librar
 
 ---
 
-## 🖥️ Comparison Part - Comparing the perfomance of 3 different Geospatial technologies
+## 🖥️ Comparison Part - Comparing the performance of 3 different Geospatial technologies
 
 The second part of this repository contains the code made and the results obtained to make a **Comparative performance analysis of Geospatial technologies**. 
 
