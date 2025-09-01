@@ -23,12 +23,12 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
     operations = [
         {
             'name': '3.1. Top 10 Largest Areas (sqm)',
-            'query': f"SELECT ST_Area(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}')) AS area_sqm, ST_AsWKB(geometry) as geom_wkb FROM read_parquet('{{main_file}}') ORDER BY area_sqm DESC LIMIT 10",
+            'query': f"SELECT ST_Area(ST_Transform(geometry, 'OGC:CRS84', '{metric_crs}')) AS area_sqm, ST_AsWKB(geometry) as geom_wkb FROM read_parquet('{{main_file}}') ORDER BY area_sqm DESC LIMIT 10",
             'requires_secondary_file': False
         },
         {
             'name': '3.2. Total Buffered Area (sqm)',
-            'query': f"SELECT SUM(ST_Area(ST_Buffer(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}'), 10.0))) AS total_buffered_area FROM read_parquet('{{main_file}}')",
+            'query': f"SELECT SUM(ST_Area(ST_Buffer(ST_Transform(geometry, 'OGC:CRS84', '{metric_crs}'), 10.0))) AS total_buffered_area FROM read_parquet('{{main_file}}')",
             'requires_secondary_file': False
         },
         {
@@ -39,8 +39,8 @@ def run_duckdb_single_table_analysis(city_name, main_file_path, secondary_file_p
                      WHERE NOT EXISTS (SELECT 1
                                        FROM read_parquet('{{secondary_file}}') AS bs
                                        WHERE ST_DWithin(
-                                           ST_Transform(r.geometry, 'EPSG:4326', '{metric_crs}'), 
-                                           ST_Transform(bs.geometry, 'EPSG:4326', '{metric_crs}'), 
+                                           ST_Transform(r.geometry, 'OGC:CRS84', '{metric_crs}'), 
+                                           ST_Transform(bs.geometry, 'OGC:CRS84', '{metric_crs}'), 
                                            50.0
                                        ))
                      """,
