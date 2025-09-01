@@ -46,17 +46,17 @@ def run_duckdb_complex_spatial_join(city_name, num_runs=100, **file_paths):
                                                      FROM read_parquet('{residential_streets_file}') AS s,
                                                           read_parquet('{hospitals_file}') AS h
                                                      WHERE ST_DWithin(
-                                                                   ST_Transform(s.geometry, 'EPSG:4326', '{metric_crs}'),
-                                                                   ST_Transform(h.geometry, 'EPSG:4326', '{metric_crs}'),
+                                                                   ST_Transform(s.geometry, 'OGC:CRS84', '{metric_crs}'),
+                                                                   ST_Transform(h.geometry, 'OGC:CRS84', '{metric_crs}'),
                                                                    100.0)),
                           trees_near_streets AS (SELECT DISTINCT t.feature_id
                                                  FROM read_parquet('{trees_file}') AS t,
                                                       streets_near_hospitals AS snh
-                                                 WHERE ST_DWithin(ST_Transform(t.geometry, 'EPSG:4326', '{metric_crs}'),
-                                                                  ST_Transform(snh.geometry, 'EPSG:4326', '{metric_crs}'),
+                                                 WHERE ST_DWithin(ST_Transform(t.geometry, 'OGC:CRS84', '{metric_crs}'),
+                                                                  ST_Transform(snh.geometry, 'OGC:CRS84', '{metric_crs}'),
                                                                   20.0))
                      SELECT (SELECT COUNT(*) FROM trees_near_streets) AS total_tree_count,
-                            (SELECT SUM(ST_Length(ST_Transform(geometry, 'EPSG:4326', '{metric_crs}')))
+                            (SELECT SUM(ST_Length(ST_Transform(geometry, 'OGC:CRS84', '{metric_crs}')))
                              FROM streets_near_hospitals)             AS total_street_length_m;
                      """
         },
@@ -70,9 +70,9 @@ def run_duckdb_complex_spatial_join(city_name, num_runs=100, **file_paths):
                                          WHERE ST_GeometryType(geometry) IN ('POLYGON', 'MULTIPOLYGON'))
                      SELECT ST_Area(
                                     ST_Difference(
-                                            ST_Transform(ST_GeomFromText('{city_boundary_wkt}'), 'EPSG:4326',
+                                            ST_Transform(ST_GeomFromText('{city_boundary_wkt}'), 'OGC:CRS84',
                                                          '{metric_crs}'),
-                                        ST_Transform((SELECT geom FROM parks_area), 'EPSG:4326', '{metric_crs}')
+                                        ST_Transform((SELECT geom FROM parks_area), 'OGC:CRS84', '{metric_crs}')
                                     )
                             ) AS non_park_area_sqm;
                      """
