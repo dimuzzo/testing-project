@@ -39,21 +39,24 @@ def run_geopandas_single_table_analysis(city_name, buildings_path, restaurants_p
         return pd.DataFrame([{'total_buffered_area': total_area}])
 
     def op_restaurants_not_near_bus_stops(gdf_rest, gdf_bus):
-        rest_valid = gdf_rest.copy()
-        rest_valid.geometry = rest_valid.geometry.buffer(0)
-        rest_metric = rest_valid.to_crs(metric_crs)
+        rest_metric = gdf_rest.to_crs(metric_crs)
+        bus_metric = gdf_bus.to_crs(metric_crs)
 
-        bus_valid = gdf_bus.copy()
-        bus_valid.geometry = bus_valid.geometry.buffer(0)
-        bus_metric = bus_valid.to_crs(metric_crs)
+        # Spatial join with buffer
+        bus_buffered = bus_metric.copy()
+        bus_buffered.geometry = bus_buffered.geometry.buffer(50.0)
 
-        # Find the indices of restaurants that ARE within 50 meters of a bus stop
-        intersecting_indices = gpd.sjoin_nearest(
-            rest_metric, bus_metric, how='inner', max_distance=50
-        ).index
+        # Find all restaurants that INTERSECT with buffers
+        intersecting = gpd.sjoin(
+            rest_metric, bus_buffered,
+            how='inner',
+            predicate='intersects'
+        ).index.unique()
 
-        # Return restaurants whose indices are NOT in the intersecting list
-        return rest_metric[~rest_metric.index.isin(intersecting_indices)]
+        # Return those that do NOT intersect
+        result = rest_metric[~rest_metric.index.isin(intersecting)]
+
+        return result
 
     # Define the list of operations to run
     operations = [
