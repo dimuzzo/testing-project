@@ -63,20 +63,20 @@ use_case,technology,operation_description,test_dataset,avg_execution_time_s,num_
 3. Single Table Analysis (OSM Data),GeoPandas,3.1. Top 10 Largest Areas (sqm),pinerolo_buildings.geoparquet,0.05316606161616589,99,0.0195,Found 10 results. Average of 99 hot cache runs.
 3. Single Table Analysis (OSM Data),GeoPandas,3.2. Total Buffered Area (sqm),pinerolo_buildings.geoparquet,0.17397310000001198,1,N/A,"Total area: 7,053,258.66 sqm. Cold start (first run)."
 3. Single Table Analysis (OSM Data),GeoPandas,3.2. Total Buffered Area (sqm),pinerolo_buildings.geoparquet,0.17567709898990166,99,N/A,"Total area: 7,053,258.66 sqm. Average of 99 hot cache runs."
-3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,pinerolo_restaurants_bus_stops,0.006920999999977084,1,0.0133,Found 17 results. Cold start (first run).
-3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,pinerolo_restaurants_bus_stops,0.004144179797979499,99,0.0133,Found 17 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,pinerolo_restaurants_bus_stops,0.004520999999840569,1,0.0135,Found 15 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,pinerolo_restaurants_bus_stops,0.005447852525284903,99,0.0135,Found 15 results. Average of 99 hot cache runs.
 3. Single Table Analysis (OSM Data),GeoPandas,3.1. Top 10 Largest Areas (sqm),milan_buildings.geoparquet,0.8349901000000273,1,0.0225,Found 10 results. Cold start (first run).
 3. Single Table Analysis (OSM Data),GeoPandas,3.1. Top 10 Largest Areas (sqm),milan_buildings.geoparquet,0.8692049515151519,99,0.0225,Found 10 results. Average of 99 hot cache runs.
 3. Single Table Analysis (OSM Data),GeoPandas,3.2. Total Buffered Area (sqm),milan_buildings.geoparquet,2.9878439999999955,1,N/A,"Total area: 111,502,034.64 sqm. Cold start (first run)."
 3. Single Table Analysis (OSM Data),GeoPandas,3.2. Total Buffered Area (sqm),milan_buildings.geoparquet,2.933398690909101,99,N/A,"Total area: 111,502,034.64 sqm. Average of 99 hot cache runs."
-3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,milan_restaurants_bus_stops,0.015401800000063304,1,0.0441,Found 2672 results. Cold start (first run).
-3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,milan_restaurants_bus_stops,0.016262906060603082,99,0.0441,Found 2672 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,milan_restaurants_bus_stops,0.04940860000078828,1,0.0743,Found 2136 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,milan_restaurants_bus_stops,0.04827724444440361,99,0.0743,Found 2136 results. Average of 99 hot cache runs.
 3. Single Table Analysis (OSM Data),GeoPandas,3.1. Top 10 Largest Areas (sqm),rome_buildings.geoparquet,2.518622999999934,1,0.0238,Found 10 results. Cold start (first run).
 3. Single Table Analysis (OSM Data),GeoPandas,3.1. Top 10 Largest Areas (sqm),rome_buildings.geoparquet,2.6340271202020205,99,0.0238,Found 10 results. Average of 99 hot cache runs.
 3. Single Table Analysis (OSM Data),GeoPandas,3.2. Total Buffered Area (sqm),rome_buildings.geoparquet,9.382261299999982,1,N/A,"Total area: 299,204,638.41 sqm. Cold start (first run)."
 3. Single Table Analysis (OSM Data),GeoPandas,3.2. Total Buffered Area (sqm),rome_buildings.geoparquet,9.141066268686867,99,N/A,"Total area: 299,204,638.41 sqm. Average of 99 hot cache runs."
-3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops,0.03538459999981569,1,0.0697,Found 3069 results. Cold start (first run).
-3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops,0.03598451414142222,99,0.0697,Found 3069 results. Average of 99 hot cache runs.
+3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops,0.13266370000019378,1,0.0927,Found 2299 results. Cold start (first run).
+3. Single Table Analysis (OSM Data),GeoPandas,3.3. Restaurants NOT near Bus Stops,rome_restaurants_bus_stops,0.12993715555564972,99,0.0927,Found 2299 results. Average of 99 hot cache runs.
 4. Complex Spatial Join (OSM Data),DuckDB Spatial,4.1. Restaurants per Neighborhood,pinerolo_neighborhoods_restaurants.geoparquet,0.03301120000000424,1,0.1253,Found 13 results. Cold start (first run).
 4. Complex Spatial Join (OSM Data),DuckDB Spatial,4.1. Restaurants per Neighborhood,pinerolo_neighborhoods_restaurants.geoparquet,0.004387245454547277,99,0.1253,Found 13 results. Average of 99 hot cache runs.
 4. Complex Spatial Join (OSM Data),DuckDB Spatial,4.2. Tree Count and Length Sum of Residential Roads Near Hospitals,pinerolo_hospitals_residential_streets_trees.geoparquet,0.1780554000000052,1,N/A,"Trees: 0, Street Length: 4,997.96m. Cold start."
